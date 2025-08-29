@@ -64,8 +64,8 @@ export default function Navbar() {
     return(
         <nav>
             <div className="mx-auto flex w-full max-w-7xl justify-between px-3 py-7 text-sm border-b">
-                <h1 className="py-1 md:py-0 text-4xl font-extrabold tracking-wide bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent drop-shadow-md">
-                    Easyhire<span className="text-gray-800">Desk</span>
+                <h1 className="py-1 md:py-0 text-4xl font-extrabold tracking-wide bg-gradient-to-r  bg-clip-text text-black drop-shadow-md">
+                    Easyhire<span className="text-shadow-black">Desk</span>
                 </h1>
                 <section ref={animationParent} className="flex items-center">
                     {isSideMenuOpen && <MobileSideMenu closeSideMenu={closeSideMenu} />}

@@ -1,4 +1,4 @@
-import { FaTwitter, FaFacebookF, FaInstagram, FaGithub } from "react-icons/fa";
+import { FaInstagram, FaGithub, FaLinkedin } from "react-icons/fa";
 import Link from "next/link";
 
 
@@ -7,8 +7,8 @@ export default function Footer() {
     <footer className="bg-white mt-10">
       <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-    <h1 className="text-4xl font-extrabold tracking-wide bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent drop-shadow-md py-2">
-      Easyhire<span className="text-gray-800">Desk</span>
+    <h1 className="text-4xl font-extrabold tracking-wide bg-gradient-to-r bg-clip-text drop-shadow-md py-2 text-black">
+      Easyhire<span className="text-gray-400">Desk</span>
     </h1>
 
     <p className="text-gray-600 mt-3 text-sm">
@@ -55,10 +55,9 @@ export default function Footer() {
       <div className="border-t py-6 px-6 flex flex-col md:flex-row items-center justify-between max-w-7xl mx-auto">
         <p className="text-sm text-gray-600">© Copyright 2025, All Rights Reserved</p>
         <div className="flex gap-4 mt-4 md:mt-0">
-          <Link href="#"><FaTwitter className="text-gray-700 hover:text-blue-500 text-lg" /></Link>
-          <Link href="#"><FaFacebookF className="text-gray-700 hover:text-blue-600 text-lg" /></Link>
-          <Link href="#"><FaInstagram className="text-gray-700 hover:text-pink-500 text-lg" /></Link>
-          <Link href="#"><FaGithub className="text-gray-700 hover:text-black text-lg" /></Link>
+          <Link href="https://www.linkedin.com/in/narendrakumar-kumawat-474647257/"><FaLinkedin className="text-gray-700 hover:text-blue-500 text-lg" /></Link>
+          <Link href="https://github.com/narendrakumar9867/easyhiredesk"><FaGithub className="text-gray-700 hover:text-black text-lg" /></Link>
+          <Link href=""><FaInstagram className="text-gray-700 hover:text-pink-500 text-lg" /></Link>
         </div>
       </div>
     </footer>
