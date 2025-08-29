@@ -1,21 +1,36 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Mail, Eye, Save, Edit3 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import Link from "next/link";
 
 import Navbar from "@/src/components/Navbar"
 import FooterLogin from '@/src/components/FooterLogin';
 
-const HRCandidateForm = () => {
+const RoundPage = () => {
+  const searchParams = useSearchParams();
+  const [totalRounds, setTotalRounds] = useState(3);
+  
+  useEffect(() => {
+    const rounds = searchParams.get('rounds');
+    if (rounds) {
+      setTotalRounds(parseInt(rounds));
+    }
+  }, [searchParams]);
+  
   const [currentRound, setCurrentRound] = useState(1);
+  const [roundTitles, setRoundTitles] = useState({
+    1: 'Candidate Details Form'
+  });
   const [formFields, setFormFields] = useState([
     { id: 1, label: 'Full Name', type: 'text', required: true, placeholder: 'Enter full name' },
     { id: 2, label: 'Email', type: 'email', required: true, placeholder: 'Enter email address' },
     { id: 3, label: 'Phone Number', type: 'tel', required: true, placeholder: 'Enter phone number' }
   ]);
   
-  const [selectedEmail, setSelectedEmail] = useState('Subject: Congratulations! You have been selected\n\nDear [Candidate Name],\n\nWe are pleased to inform you that you have been selected for the position of [Position] at our company.\n\nWe will contact you soon with further details.\n\nBest regards,\nHR Team');
+  const [selectedEmail, setSelectedEmail] = useState('Subject: Congratulations! You have been selected for Round ' + (currentRound + 1) + '\n\nDear [Candidate Name],\n\nWe are pleased to inform you that you have been selected to proceed to Round ' + (currentRound + 1) + ' for the position of [Position] at our company.\n\nWe will contact you soon with further details.\n\nBest regards,\nHR Team');
   
-  const [rejectionEmail, setRejectionEmail] = useState('Subject: Thank you for your application\n\nDear [Candidate Name],\n\nThank you for your interest in the [Position] role at our company.\n\nAfter careful consideration, we have decided to move forward with other candidates whose qualifications more closely match our current requirements.\n\nWe appreciate the time you invested in the application process and encourage you to apply for future opportunities.\n\nBest regards,\nHR Team');
+  const [rejectionEmail, setRejectionEmail] = useState('Subject: Thank you for your application - Round ' + currentRound + '\n\nDear [Candidate Name],\n\nThank you for your interest in the [Position] role at our company.\n\nAfter careful consideration of Round ' + currentRound + ', we have decided to move forward with other candidates whose qualifications more closely match our current requirements.\n\nWe appreciate the time you invested in the application process and encourage you to apply for future opportunities.\n\nBest regards,\nHR Team');
   
   const [showPreview, setShowPreview] = useState(false);
   const [newField, setNewField] = useState({ label: '', type: 'text', required: false, placeholder: '' });
@@ -33,6 +48,16 @@ const HRCandidateForm = () => {
     { value: 'checkbox', label: 'Checkboxes' },
     { value: 'file', label: 'File Upload' }
   ];
+
+  useEffect(() => {
+    if (currentRound === totalRounds) {
+      setSelectedEmail('Subject: Congratulations! You have been selected\n\nDear [Candidate Name],\n\nWe are pleased to inform you that you have been selected for the position of [Position] at our company.\n\nWe will contact you soon with further details about joining our team.\n\nBest regards,\nHR Team');
+    } else {
+      setSelectedEmail('Subject: Congratulations! You have been selected for Round ' + (currentRound + 1) + '\n\nDear [Candidate Name],\n\nWe are pleased to inform you that you have been selected to proceed to Round ' + (currentRound + 1) + ' for the position of [Position] at our company.\n\nWe will contact you soon with further details.\n\nBest regards,\nHR Team');
+    }
+    
+    setRejectionEmail('Subject: Thank you for your application - Round ' + currentRound + '\n\nDear [Candidate Name],\n\nThank you for your interest in the [Position] role at our company.\n\nAfter careful consideration of Round ' + currentRound + ', we have decided to move forward with other candidates whose qualifications more closely match our current requirements.\n\nWe appreciate the time you invested in the application process and encourage you to apply for future opportunities.\n\nBest regards,\nHR Team');
+  }, [currentRound, totalRounds]);
 
   const addField = () => {
     if (newField.label.trim()) {
@@ -89,6 +114,9 @@ const HRCandidateForm = () => {
       fields: formFields,
       selectedEmail,
       rejectionEmail,
+      totalRounds,
+      currentRound,
+      roundTitles,
       createdAt: new Date().toISOString()
     };
 
@@ -96,31 +124,21 @@ const HRCandidateForm = () => {
     alert('Form configuration saved successfully!');
   };
 
-  return (
-    <div className="min-h-screen bg-white">
+  const updateRoundTitle = (roundNumber, title) => {
+    setRoundTitles(prev => ({
+      ...prev,
+      [roundNumber]: title
+    }));
+  };
 
-      <Navbar />
+  const generateRounds = () => {
+    return Array.from({ length: totalRounds }, (_, i) => i + 1);
+  };
 
-      <div className="flex justify-center gap-8 border-gray-300 pb-2 pt-4">
-        {[1, 2, 3].map((round) => (
-          <div 
-            key={round}
-            className={`pb-2 cursor-pointer ${currentRound === round ? "border-b-4 boder-blue-600 font-bold text-gray-500" : "text-gray-600"}`}
-          >
-            Round {round}
-          </div>
-        ))}
-      </div>
+  const renderRoundContent = () => {
+    if (currentRound === 1) {
 
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white p-6 mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Round 1- Candidate Details Form</h1>
-            </div>
-          </div>
-        </div>
-
+      return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -269,7 +287,7 @@ const HRCandidateForm = () => {
                   </div>
                 ))}
                 
-                <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                <button className="w-full bg-gray-100 text-black py-3 rounded-lg hover:bg-black hover:text-white transition-colors">
                   Submit Application
                 </button>
               </div>
@@ -277,15 +295,15 @@ const HRCandidateForm = () => {
           </div>
 
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-green-700">
                 <Mail size={20} />
-                Selected Candidates Email Template
+                Selected Candidates Email
               </h3>
               <textarea
                 value={selectedEmail}
                 onChange={(e) => setSelectedEmail(e.target.value)}
-                className="w-full h-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm"
+                className="w-full h-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm"
                 placeholder="Write email template for selected candidates..."
               />
               <div className="mt-3 text-xs text-gray-500">
@@ -293,15 +311,15 @@ const HRCandidateForm = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-red-700">
                 <Mail size={20} />
-                Non-Selected Candidates Email Template
+                Non-Selected Candidates Email
               </h3>
               <textarea
                 value={rejectionEmail}
                 onChange={(e) => setRejectionEmail(e.target.value)}
-                className="w-full h-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
+                className="w-full h-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm"
                 placeholder="Write email template for non-selected candidates..."
               />
               <div className="mt-3 text-xs text-gray-500">
@@ -309,7 +327,7 @@ const HRCandidateForm = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white p-6">
               <h3 className="text-lg font-semibold mb-4">Email Preview</h3>
               <div className="space-y-4">
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -329,40 +347,158 @@ const HRCandidateForm = () => {
             </div>
           </div>
         </div>
+      );
+    } else {
+      return (
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white mb-6">
+            <h3 className="text-lg font-semibold mb-4">Round Title</h3>
+            <input
+              type="text"
+              value={roundTitles[currentRound] || ''}
+              onChange={(e) => updateRoundTitle(currentRound, e.target.value)}
+              placeholder={`Enter title for Round ${currentRound} (e.g., Technical Interview, HR Interview, Final Interview)`}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+            />
+          </div>
 
-        <div className="bg-white pb-6 mb-6 mt-6">
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowPreview(!showPreview)}
-              className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              <Eye size={20} />
-              {showPreview ? 'Edit Mode' : 'Preview'}
-            </button>
-            <button
-              onClick={saveForm}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <Save size={20} />
-              Save Form
-            </button>
+          <div className="space-y-6">
+            <div className="bg-white p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-green-700">
+                <Mail size={20} />
+                Selected Candidates Email
+              </h3>
+              <textarea
+                value={selectedEmail}
+                onChange={(e) => setSelectedEmail(e.target.value)}
+                className="w-full h-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm"
+                placeholder="Write email template for selected candidates..."
+              />
+              <div className="mt-3 text-xs text-gray-500">
+                Use [Candidate Name] and [Position] as placeholders
+              </div>
+            </div>
+
+            <div className="bg-white p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-red-700">
+                <Mail size={20} />
+                Non-Selected Candidates Email
+              </h3>
+              <textarea
+                value={rejectionEmail}
+                onChange={(e) => setRejectionEmail(e.target.value)}
+                className="w-full h-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
+                placeholder="Write email template for non-selected candidates..."
+              />
+              <div className="mt-3 text-xs text-gray-500">
+                Use [Candidate Name] and [Position] as placeholders
+              </div>
+            </div>
+
+            <div className="bg-white p-6">
+              <h3 className="text-lg font-semibold mb-4">Email Preview</h3>
+              <div className="space-y-4">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h4 className="font-medium text-green-800 mb-2">Selected Email Preview:</h4>
+                  <div className="text-sm text-green-700 whitespace-pre-line">
+                    {selectedEmail.replace('[Candidate Name]', 'John Doe').replace(/\[Position\]/g, 'Software Developer')}
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <h4 className="font-medium text-red-800 mb-2">Rejection Email Preview:</h4>
+                  <div className="text-sm text-red-700 whitespace-pre-line">
+                    {rejectionEmail.replace('[Candidate Name]', 'Jane Smith').replace(/\[Position\]/g, 'Software Developer')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-white">
+
+      <Navbar />
+
+      <div className="flex justify-center gap-8 border-gray-300 pb-2 pt-4">
+        {generateRounds().map((round) => (
+          <div 
+            key={round}
+            onClick={() => setCurrentRound(round)}
+            className={`pb-2 cursor-pointer transition-all ${
+              currentRound === round 
+                ? "border-b-4 border-blue-600 font-bold text-blue-600" 
+                : "text-gray-600 hover:text-blue-500"
+            }`}
+          >
+            Round {round}
+          </div>
+        ))}
+      </div>
+
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white p-6 mb-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Round {currentRound}{roundTitles[currentRound] ? ` - ${roundTitles[currentRound]}` : ''}
+              </h1>
+              <p className="text-gray-600 mt-2">
+                {currentRound === 1 
+                  ? `Configure candidate application form fields and email for Round ${currentRound} of ${totalRounds}`
+                  : `Configure email templates for Round ${currentRound} of ${totalRounds}`
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {renderRoundContent()}
+
+        <div className="bg-white pb-6 mb-6 mt-6 px-6">
+          <div className="flex gap-3 justify-end">
+            {currentRound === 1 && (
+              <button
+                onClick={() => setShowPreview(!showPreview)}
+                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:text-black hover:bg-gray-200 transition-colors"
+              >
+                <Eye size={20} />
+                {showPreview ? 'Edit Mode' : 'Preview'}
+              </button>
+            )}
 
             {currentRound > 1 && (
               <button
                 onClick={() => setCurrentRound(currentRound - 1)}
-                className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
+                className="px-4 py-2 bg-gray-200 text-black hover:text-white hover:bg-black rounded-lg"
               >
-                Previous
+                Previous Round
               </button>
             )}
-            {currentRound < 3 && (
+            {currentRound < totalRounds && (
               <button
                 onClick={() => setCurrentRound(currentRound + 1)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="px-4 py-2 bg-gray-200 text-black hover:text-white hover:bg-black rounded-lg"
               >
-                Next
+                Next Round
               </button>
             )}
+
+            {currentRound === totalRounds && (
+              <button
+                onClick={saveForm}
+                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-200 hover:text-black transition-colors"
+              >
+                <Save size={20} />
+                <Link href="/">Submit All Rounds</Link>
+              </button>
+            )}
+            
+
           </div>
         </div>
       </div>
@@ -372,4 +508,4 @@ const HRCandidateForm = () => {
   );
 };
 
-export default HRCandidateForm;
+export default RoundPage;

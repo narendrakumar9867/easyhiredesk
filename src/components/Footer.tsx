@@ -7,8 +7,8 @@ export default function Footer() {
     <footer className="bg-white mt-10">
       <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-    <h1 className="text-4xl font-extrabold tracking-wide bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent drop-shadow-md py-2">
-      Easyhire<span className="text-gray-800">Desk</span>
+    <h1 className="text-4xl font-extrabold tracking-wide bg-gradient-to-r bg-clip-text drop-shadow-md py-2 text-black">
+      Easyhire<span className="text-gray-400">Desk</span>
     </h1>
 
     <p className="text-gray-600 mt-3 text-sm">
