@@ -1,11 +1,12 @@
 "use client";
 import React, { useState } from 'react';
-import { Eye, Edit, Building2, MapPin, Globe, Github, Linkedin, Twitter, Plus, X, Save, FileText } from 'lucide-react';
-
-import Link from "next/link";
+import { Eye, Edit, Building2, MapPin, Globe, Github, Linkedin, Twitter, Plus, X, Save } from 'lucide-react';
+import axios from "axios";
 
 import Navbar from "@/src/components/Navbar";
 import FooterLogin from '@/src/components/FooterLogin';
+import { useRouter } from 'next/navigation';
+
 
 export default function JobDetailsPage() {
   const [activeTab, setActiveTab] = useState('edit');
@@ -17,6 +18,29 @@ export default function JobDetailsPage() {
     socialLinks: [],
     aboutJob: ''
   });
+
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post("http://localhost:5000/api/jobs", formData, {
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
+
+      console.log("Job created response:", res.data);
+      const jobId = res.data.job._id;
+
+      router.push(`/hireprocess/selectionprocess?jobId=${jobId}`);
+      console.log("Job saved with Id:", jobId);
+      alert("Job saved successfully.");
+    } catch (error) {
+      console.error(error);
+      alert("Error saving job.");
+    }
+  };
 
   const [newSocialLink, setNewSocialLink] = useState({ platform: 'linkedin', url: '' });
 
@@ -385,15 +409,15 @@ export default function JobDetailsPage() {
             </div>
 
             <div className="px-8 py-6 bg-white border-t border-gray-200 flex flex-col sm:flex-row gap-4 justify-end">
-                <button className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center">
+                {/* <button className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center">
                 <FileText className="w-4 h-4 mr-2" />
                 Save as Draft
-                </button>
-                <button className="px-8 py-3 bg-black text-white rounded-xl hover:bg-gray-200 hover:text-black transition-colors duration-200 flex items-center justify-center">
-                  <Link href="/hireprocess/selectionprocess/">
+                </button> */}
+                <button
+                  onClick={handleSubmit}
+                  className="px-8 py-3 bg-black text-white rounded-xl hover:bg-gray-200 hover:text-black transition-colors duration-200 flex items-center justify-center">
                   <Save className="w-4 h-4 mr-2" />
                   Publish Job
-                  </Link>
                 </button>
             </div>
             </div>
