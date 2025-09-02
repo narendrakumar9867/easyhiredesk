@@ -1,4 +1,6 @@
+"use client";
 import React from 'react';
+import { useEffect } from 'react';
 import Balancer from 'react-wrap-balancer';
 import Image from 'next/image';
 import Link from "next/link";
@@ -10,6 +12,13 @@ import hremoImageDesktop from "../../public/images/image-hero-desktop.png"
 import hremoImageMobile from "../../public/images/image-hero-mobile.png"
 
 export default function Home() {
+
+  useEffect(() => {
+    fetch("http://localhost:5000/")
+      .then(res => res.json())
+      .catch(err => console.log(err));
+  }, []);
+
   return (
     <div className="min-h-screen w-full bg-white">
       < Navbar />

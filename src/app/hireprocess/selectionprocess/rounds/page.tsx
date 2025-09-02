@@ -1,24 +1,25 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Mail, Eye, Save, Edit3 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import Link from "next/link";
+import { useRouter } from 'next/navigation';
 
 import Navbar from "@/src/components/Navbar"
 import FooterLogin from '@/src/components/FooterLogin';
+import axios from 'axios';
 
 const RoundPage = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  
   const [totalRounds, setTotalRounds] = useState(3);
-  
-  useEffect(() => {
-    const rounds = searchParams.get('rounds');
-    if (rounds) {
-      setTotalRounds(parseInt(rounds));
-    }
-  }, [searchParams]);
-  
+  const [allRoundsData, setAllRoundsData] = useState({});
   const [currentRound, setCurrentRound] = useState(1);
+  const [roundDetailsIds, setRoundDetailsIds] = useState({});
+  
+  const jobId = searchParams.get('jobId');
+  const rounds = searchParams.get('rounds');
+  
   const [roundTitles, setRoundTitles] = useState({
     1: 'Candidate Details Form'
   });
@@ -49,6 +50,126 @@ const RoundPage = () => {
     { value: 'file', label: 'File Upload' }
   ];
 
+  const parseEmail = useCallback((emailText) => {
+    const lines = emailText.split('\n');
+    const subject = lines[0].replace('Subject: ', '').trim();
+    const body = lines.slice(2).join('\n').trim();
+    return { subject, body };
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!jobId || !rounds) {
+      alert('Missing job or rounds information');
+      return;
+    }
+
+    try {
+      saveCurrentRoundData();
+      
+      const updatedAllRoundsData = { ...allRoundsData };
+      const currentData = {
+        title: roundTitles[currentRound] || `Round ${currentRound}`,
+        formFields: currentRound === 1 ? formFields : [],
+        selectedEmail,
+        rejectionEmail
+      };
+      updatedAllRoundsData[currentRound] = currentData;
+      
+      for (let roundNum = 1; roundNum <= totalRounds; roundNum++) {
+        const roundData = updatedAllRoundsData[roundNum];
+        
+        if (!roundData) {
+          alert(`Please configure Round ${roundNum} before submitting`);
+          return;
+        }
+
+        const roundDetailsId = jobId;
+        
+        const payload = {
+          roundDetailsId: roundDetailsId,
+          title: roundData.title || `Round ${roundNum}`,
+          formFields: roundData.formFields.map(field => ({
+            label: field.label,
+            fieldType: field.type,
+            placeholder: field.placeholder || '',
+            required: field.required || false,
+            options: field.type === 'select' ? ['Option 1', 'Option 2'] : undefined
+          })),
+          selectedEmail: parseEmail(roundData.selectedEmail),
+          nonSelectedEmail: parseEmail(roundData.rejectionEmail)
+        };
+
+        console.log(`Submitting Round ${roundNum} with payload:`, payload);
+
+        const res = await axios.post("http://localhost:5000/api/round/details", payload, {
+          headers: {
+            "Content-Type": "application/json",
+          }
+        });
+        
+        console.log(`Round ${roundNum} saved:`, res.data);
+      }
+
+      alert("All rounds configured successfully!");
+      router.push("/");
+      
+    } catch (error) {
+      console.error("Error submitting rounds:", error);
+      console.error("Error details:", error.response?.data);
+      alert(`Error submitting rounds: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  const saveCurrentRoundData = useCallback(() => {
+    const currentRoundData = {
+      title: roundTitles[currentRound] || `Round ${currentRound}`,
+      formFields: currentRound === 1 ? formFields : [],
+      selectedEmail,
+      rejectionEmail
+    };
+    
+    setAllRoundsData(prev => ({
+      ...prev,
+      [currentRound]: currentRoundData
+    }));
+  }, [currentRound, formFields, selectedEmail, rejectionEmail, roundTitles]);
+
+  useEffect(() => {
+    const fetchRoundDetails = async () => {
+      if (jobId && rounds) {
+        try {
+          console.log("Job ID:", jobId);
+          console.log("Number of rounds:", rounds);
+          
+          const ids = {};
+          const numberOfRounds = parseInt(rounds);
+          
+          for (let i = 1; i <= numberOfRounds; i++) {
+            ids[i] = jobId;
+          }
+          
+          setRoundDetailsIds(ids);
+          console.log("Round details IDs mapping:", ids);
+          
+        } catch (error) {
+          console.error('Error setting up round details:', error);
+          alert('Error setting up round details. Please try again.');
+        }
+      }
+    };
+  
+    fetchRoundDetails();
+  }, [jobId, rounds]);
+
+  useEffect(() => {
+    const rounds = searchParams.get('rounds');
+    if (rounds) {
+      setTotalRounds(parseInt(rounds));
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (currentRound === totalRounds) {
       setSelectedEmail('Subject: Congratulations! You have been selected\n\nDear [Candidate Name],\n\nWe are pleased to inform you that you have been selected for the position of [Position] at our company.\n\nWe will contact you soon with further details about joining our team.\n\nBest regards,\nHR Team');
@@ -57,7 +178,20 @@ const RoundPage = () => {
     }
     
     setRejectionEmail('Subject: Thank you for your application - Round ' + currentRound + '\n\nDear [Candidate Name],\n\nThank you for your interest in the [Position] role at our company.\n\nAfter careful consideration of Round ' + currentRound + ', we have decided to move forward with other candidates whose qualifications more closely match our current requirements.\n\nWe appreciate the time you invested in the application process and encourage you to apply for future opportunities.\n\nBest regards,\nHR Team');
-  }, [currentRound, totalRounds]);
+    
+    const savedData = allRoundsData[currentRound];
+    if (savedData) {
+      setRoundTitles(prev => ({
+        ...prev,
+        [currentRound]: savedData.title
+      }));
+      setSelectedEmail(savedData.selectedEmail);
+      setRejectionEmail(savedData.rejectionEmail);
+      if (currentRound === 1 && savedData.formFields.length > 0) {
+        setFormFields(savedData.formFields);
+      }
+    }
+  }, [currentRound, totalRounds, allRoundsData]);
 
   const addField = () => {
     if (newField.label.trim()) {
@@ -109,21 +243,6 @@ const RoundPage = () => {
     }
   };
 
-  const saveForm = () => {
-    const formData = {
-      fields: formFields,
-      selectedEmail,
-      rejectionEmail,
-      totalRounds,
-      currentRound,
-      roundTitles,
-      createdAt: new Date().toISOString()
-    };
-
-    console.log('Form saved:', formData);
-    alert('Form configuration saved successfully!');
-  };
-
   const updateRoundTitle = (roundNumber, title) => {
     setRoundTitles(prev => ({
       ...prev,
@@ -135,9 +254,23 @@ const RoundPage = () => {
     return Array.from({ length: totalRounds }, (_, i) => i + 1);
   };
 
+  const handleRoundChange = (targetRound) => {
+    if (currentRound === 1 && formFields.length === 0) {
+      alert('Please add at least one form field before switching rounds');
+      return;
+    }
+    
+    if (!roundTitles[currentRound] || roundTitles[currentRound].trim() === '') {
+      alert(`Please enter a title for Round ${currentRound} before switching`);
+      return;
+    }
+    
+    saveCurrentRoundData();
+    setCurrentRound(targetRound);
+  };
+
   const renderRoundContent = () => {
     if (currentRound === 1) {
-
       return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white p-6">
@@ -157,7 +290,7 @@ const RoundPage = () => {
                             type="text"
                             value={field.label}
                             onChange={(e) => updateField(field.id, { label: e.target.value })}
-                            className="font-medium text-gray-900 bg-transparent border-none p-0 focus:outline-none focus:ring-0"
+                            className="font-medium text-gray-900 bg-transparent border-none p-0 focus:outline-none focus:ring-0 w-full"
                           />
                         </div>
                         {index > 2 && (
@@ -406,7 +539,7 @@ const RoundPage = () => {
                 </div>
                 
                 <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <h4 className="font-medium text-red-800 mb-2">Rejection Email Preview:</h4>
+                  <h4 className="font-medium text-red-808 mb-2">Rejection Email Preview:</h4>
                   <div className="text-sm text-red-700 whitespace-pre-line">
                     {rejectionEmail.replace('[Candidate Name]', 'Jane Smith').replace(/\[Position\]/g, 'Software Developer')}
                   </div>
@@ -421,14 +554,13 @@ const RoundPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-
       <Navbar />
 
       <div className="flex justify-center gap-8 border-gray-300 pb-2 pt-4">
         {generateRounds().map((round) => (
           <div 
             key={round}
-            onClick={() => setCurrentRound(round)}
+            onClick={() => handleRoundChange(round)}
             className={`pb-2 cursor-pointer transition-all ${
               currentRound === round 
                 ? "border-b-4 border-blue-600 font-bold text-blue-600" 
@@ -436,6 +568,7 @@ const RoundPage = () => {
             }`}
           >
             Round {round}
+            {allRoundsData[round] && <span className="ml-1 text-green-500">✓</span>}
           </div>
         ))}
       </div>
@@ -473,15 +606,16 @@ const RoundPage = () => {
 
             {currentRound > 1 && (
               <button
-                onClick={() => setCurrentRound(currentRound - 1)}
+                onClick={() => handleRoundChange(currentRound - 1)}
                 className="px-4 py-2 bg-gray-200 text-black hover:text-white hover:bg-black rounded-lg"
               >
                 Previous Round
               </button>
             )}
+            
             {currentRound < totalRounds && (
               <button
-                onClick={() => setCurrentRound(currentRound + 1)}
+                onClick={() => handleRoundChange(currentRound + 1)}
                 className="px-4 py-2 bg-gray-200 text-black hover:text-white hover:bg-black rounded-lg"
               >
                 Next Round
@@ -490,15 +624,13 @@ const RoundPage = () => {
 
             {currentRound === totalRounds && (
               <button
-                onClick={saveForm}
+                onClick={handleSubmit}
                 className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-200 hover:text-black transition-colors"
               >
                 <Save size={20} />
-                <Link href="/">Submit All Rounds</Link>
+                Submit All Rounds
               </button>
             )}
-            
-
           </div>
         </div>
       </div>

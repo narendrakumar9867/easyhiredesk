@@ -2,20 +2,51 @@
 import React from 'react';
 import { useState } from 'react';
 import { Users, Clock, Star } from 'lucide-react';
-import Link from "next/link";
-import { useRouter } from 'next/navigation';
+import axios from 'axios';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import Navbar from '@/src/components/Navbar';
 import FooterLogin from '@/src/components/FooterLogin';
 
 export default function HirePage() {
   const [selectedRounds, setSelectedRounds] = useState(2);
+  const searchParams = useSearchParams();
+  const jobId = searchParams.get("jobId");
   const router = useRouter();
 
-  const handleNextStep = () => {
-    // Navigate to job details with rounds parameter
-    router.push(`/hireprocess/selectionprocess/rounds?rounds=${selectedRounds}`);
-  };
+  const handleNextStep = async (e) => {
+  e.preventDefault();
+  
+  if (!jobId) {
+    alert("Job ID not found!");
+    return;
+  }
+
+  try {
+    const roundsArray = Array.from({ length: selectedRounds }, (_, i) => `Round ${i + 1}`);
+    console.log("roundsArray:", roundsArray);
+
+    const res = await axios.post(
+      "http://localhost:5000/api/rounds",
+      { 
+        jobId: jobId, 
+        selectedRounds: roundsArray, 
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    router.push(`/hireprocess/selectionprocess/rounds?jobId=${jobId}&rounds=${selectedRounds}`);
+    console.log("Rounds: ", res.data);
+    alert("Rounds are selected.");
+  } catch (error) {
+    console.error(error);
+    alert("Error choosing rounds.");
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br bg-white">
