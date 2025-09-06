@@ -6,25 +6,33 @@ import axios from "axios";
 import Navbar from "@/src/components/Navbar";
 import FooterLogin from '@/src/components/FooterLogin';
 import { useRouter } from 'next/navigation';
-
+import { useAuth } from '@/src/hooks/useAuth';
 
 export default function JobDetailsPage() {
   const [activeTab, setActiveTab] = useState('edit');
+  const { token } = useAuth();
   const [formData, setFormData] = useState({
     companyName: '',
     jobTitle: '',
     location: '',
     companyWebsite: '',
     socialLinks: [],
-    aboutJob: ''
+    aboutJob: '',
   });
 
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if(!token) {
+      alert("You must be logged in to submit a job.");
+      return;
+    }
+
     try {
       const res = await axios.post("http://localhost:5000/api/jobs", formData, {
+        withCredentials: true,
         headers: {
           "Content-Type": "application/json",
         }

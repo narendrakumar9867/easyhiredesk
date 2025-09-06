@@ -1,32 +1,96 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import toast from "react-hot-toast";
+import { useAuth } from "@/src/hooks/useAuth";
 
-import OtpVerifyPage from "./OtpVerify";
+interface FormData {
+  email: string;
+  password: string;
+}
 
-export default function LoginPage({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  const [showOtp, setShowOtp] = useState(false);
-  const [email, setEmail] = useState("");
+interface LoginUpPageProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
-  if (!isOpen) return null;
+export default function LoginPage({ isOpen, onClose }: LoginUpPageProps) {
+  if(!isOpen) return null;
 
-  if (!isOpen) {
-    return null;
-  }
+  const [formData, setFormData] = useState<FormData>({
+    email: "",
+    password: "",
+  });
 
-  const handleContinue = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email) {
-      return alert("Please enter email.");
+  const { login, isLoggingIn } = useAuth();
+  
+  const validateEmail = (email: string): boolean => {
+    if(!email) {
+      return false;
     }
-    setShowOtp(true);
+
+    const trimmedEmail = email.trim();
+    
+    const atIndex = trimmedEmail.indexOf('@');
+    if (atIndex <= 0 || atIndex === trimmedEmail.length - 1) return false;
+    
+    const localPart = trimmedEmail.substring(0, atIndex);
+    const domainPart = trimmedEmail.substring(atIndex + 1);
+    
+    if (localPart.length === 0) return false;
+    
+    const dotIndex = domainPart.lastIndexOf('.');
+    if (dotIndex <= 0 || dotIndex === domainPart.length - 1) return false;
+    
+    const domainName = domainPart.substring(0, dotIndex);
+    const topLevelDomain = domainPart.substring(dotIndex + 1);
+    
+    return domainName.length > 0 && topLevelDomain.length > 0;
   }
+
+  const validateForm = useCallback((): boolean => {
+    if(!formData.email.trim()) {
+      toast.error("email is required.");
+      return false;
+    }
+
+    if (!validateEmail(formData.email)) {
+      toast.error("Invalid email format.");
+      return false;
+    }
+
+    if (!formData.password) {
+      toast.error("Password is required.");
+      return false;
+    }
+
+    return true;
+  }, [formData]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value} = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  }, []);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if(!validateForm()) return;
+
+    try {
+      await login(formData);
+      onClose();
+    } catch (error) {
+      console.error("Login failed;", error);
+    }
+  }, [formData, validateForm, login, onClose]);
 
   return (
     <>
-      {!showOtp ? (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+      <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
       <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md relative">
 
         <button
@@ -41,19 +105,33 @@ export default function LoginPage({ isOpen, onClose }: { isOpen: boolean, onClos
           Enter your email address to log in to your account
         </p>
 
-        <form onSubmit={handleContinue} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
+            name="email"
             placeholder="Email address"
-            value={email}
+            value={formData.email}
+            onChange={handleInputChange}
+            disabled={isLoggingIn}
             className="w-full px-4 py-2 border rounded-lg focus:outline-none"
-            onChange={(e) => setEmail(e.target.value)}
           />
+
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleInputChange}
+            disabled={isLoggingIn}
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none"
+          />
+          
           <button
             type="submit"
+            disabled={isLoggingIn}
             className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
           >
-            Continue
+            {isLoggingIn ? "Logging In..." : "Continue"}
           </button>
         </form>
 
@@ -76,9 +154,6 @@ export default function LoginPage({ isOpen, onClose }: { isOpen: boolean, onClos
 
       </div>
     </div>
-    ) : (
-      <OtpVerifyPage email={email} onClose={onClose} />
-    )}
     </>
   );
 }

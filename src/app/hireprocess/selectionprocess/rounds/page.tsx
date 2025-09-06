@@ -26,7 +26,7 @@ const RoundPage = () => {
   const [formFields, setFormFields] = useState([
     { id: 1, label: 'Full Name', type: 'text', required: true, placeholder: 'Enter full name' },
     { id: 2, label: 'Email', type: 'email', required: true, placeholder: 'Enter email address' },
-    { id: 3, label: 'Phone Number', type: 'tel', required: true, placeholder: 'Enter phone number' }
+    { id: 3, label: 'Phone Number', type: 'phone', required: true, placeholder: 'Enter phone number' }
   ]);
   
   const [selectedEmail, setSelectedEmail] = useState('Subject: Congratulations! You have been selected for Round ' + (currentRound + 1) + '\n\nDear [Candidate Name],\n\nWe are pleased to inform you that you have been selected to proceed to Round ' + (currentRound + 1) + ' for the position of [Position] at our company.\n\nWe will contact you soon with further details.\n\nBest regards,\nHR Team');
@@ -40,7 +40,7 @@ const RoundPage = () => {
   const fieldTypes = [
     { value: 'text', label: 'Text' },
     { value: 'email', label: 'Email' },
-    { value: 'tel', label: 'Phone' },
+    { value: 'phone', label: 'Phone' },
     { value: 'number', label: 'Number' },
     { value: 'date', label: 'Date' },
     { value: 'textarea', label: 'Textarea' },
@@ -57,70 +57,76 @@ const RoundPage = () => {
     return { subject, body };
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Updated handleSubmit function for RoundPage.js
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!jobId || !rounds) {
+    alert('Missing job or rounds information');
+    return;
+  }
+
+  try {
+    // Save current round data first
+    saveCurrentRoundData();
     
-    if (!jobId || !rounds) {
-      alert('Missing job or rounds information');
-      return;
-    }
-
-    try {
-      saveCurrentRoundData();
+    // Get updated round data including current round
+    const updatedAllRoundsData = { ...allRoundsData };
+    const currentData = {
+      title: roundTitles[currentRound] || `Round ${currentRound}`,
+      formFields: currentRound === 1 ? formFields : [],
+      selectedEmail,
+      rejectionEmail
+    };
+    updatedAllRoundsData[currentRound] = currentData;
+    
+    // Submit each round's details
+    for (let roundNum = 1; roundNum <= totalRounds; roundNum++) {
+      const roundData = updatedAllRoundsData[roundNum];
       
-      const updatedAllRoundsData = { ...allRoundsData };
-      const currentData = {
-        title: roundTitles[currentRound] || `Round ${currentRound}`,
-        formFields: currentRound === 1 ? formFields : [],
-        selectedEmail,
-        rejectionEmail
-      };
-      updatedAllRoundsData[currentRound] = currentData;
-      
-      for (let roundNum = 1; roundNum <= totalRounds; roundNum++) {
-        const roundData = updatedAllRoundsData[roundNum];
-        
-        if (!roundData) {
-          alert(`Please configure Round ${roundNum} before submitting`);
-          return;
-        }
-
-        const roundDetailsId = jobId;
-        
-        const payload = {
-          roundDetailsId: roundDetailsId,
-          title: roundData.title || `Round ${roundNum}`,
-          formFields: roundData.formFields.map(field => ({
-            label: field.label,
-            fieldType: field.type,
-            placeholder: field.placeholder || '',
-            required: field.required || false,
-            options: field.type === 'select' ? ['Option 1', 'Option 2'] : undefined
-          })),
-          selectedEmail: parseEmail(roundData.selectedEmail),
-          nonSelectedEmail: parseEmail(roundData.rejectionEmail)
-        };
-
-        console.log(`Submitting Round ${roundNum} with payload:`, payload);
-
-        const res = await axios.post("http://localhost:5000/api/round/details", payload, {
-          headers: {
-            "Content-Type": "application/json",
-          }
-        });
-        
-        console.log(`Round ${roundNum} saved:`, res.data);
+      if (!roundData) {
+        alert(`Please configure Round ${roundNum} before submitting`);
+        return;
       }
 
-      alert("All rounds configured successfully!");
-      router.push("/");
+      // Prepare payload with correct structure
+      const payload = {
+        jobId: jobId,
+        roundNumber: roundNum,
+        title: roundData.title || `Round ${roundNum}`,
+        formFields: roundData.formFields.map(field => ({
+          label: field.label,
+          fieldType: field.type,
+          placeholder: field.placeholder || '',
+          required: field.required || false,
+          options: ['select', 'radio', 'checkbox'].includes(field.type) 
+            ? (field.options || ['Option 1', 'Option 2']) 
+            : undefined
+        })),
+        selectedEmail: parseEmail(roundData.selectedEmail),
+        nonSelectedEmail: parseEmail(roundData.rejectionEmail)
+      };
+
+      console.log(`Submitting Round ${roundNum} with payload:`, payload);
+
+      const res = await axios.post("http://localhost:5000/api/round/details", payload, {
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
       
-    } catch (error) {
-      console.error("Error submitting rounds:", error);
-      console.error("Error details:", error.response?.data);
-      alert(`Error submitting rounds: ${error.response?.data?.message || error.message}`);
+      console.log(`Round ${roundNum} saved:`, res.data);
     }
-  };
+
+    alert("All rounds configured successfully!");
+    router.push("/");
+    
+  } catch (error) {
+    console.error("Error submitting rounds:", error);
+    console.error("Error details:", error.response?.data);
+    alert(`Error submitting rounds: ${error.response?.data?.message || error.message}`);
+  }
+};
 
   const saveCurrentRoundData = useCallback(() => {
     const currentRoundData = {
@@ -419,10 +425,6 @@ const RoundPage = () => {
                     {renderFieldPreview(field)}
                   </div>
                 ))}
-                
-                <button className="w-full bg-gray-100 text-black py-3 rounded-lg hover:bg-black hover:text-white transition-colors">
-                  Submit Application
-                </button>
               </div>
             )}
           </div>
@@ -618,7 +620,7 @@ const RoundPage = () => {
                 onClick={() => handleRoundChange(currentRound + 1)}
                 className="px-4 py-2 bg-gray-200 text-black hover:text-white hover:bg-black rounded-lg"
               >
-                Next Round
+                Save & Next
               </button>
             )}
 
