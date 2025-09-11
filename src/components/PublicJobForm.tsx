@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import LoginPage from '../app/(auth)/Login';
-import PublicFormSignUp from '../app/(auth)/SignUp'; // Import the signup component
+import PublicFormSignUp from '../app/(auth)/SignUp';
 import { useAuth } from "@/src/hooks/useAuth";
 
 interface FormField {
@@ -117,54 +117,102 @@ const PublicJobApplicationForm = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
+  
+  if (!authUser) {
+    setShowLogin(true);
+    return;
+  }
+
+  if (!formConfig) return;
+
+  console.log("Form data before submission:", formData);
+  console.log("Form config fields:", formConfig.formFields);
+
+  // Validate required fields
+  for (const field of formConfig.formFields) {
+    const fieldValue = formData[field.label];
+    console.log(`Checking field ${field.label}:`, fieldValue, "Required:", field.required);
     
-    if (!authUser) {
-      setShowLogin(true);
+    if (field.required && (!fieldValue || fieldValue === '' || (Array.isArray(fieldValue) && fieldValue.length === 0))) {
+      alert(`${field.label} is required`);
       return;
     }
+  }
 
-    if (!formConfig) return;
-
-    // Validate required fields
-    for (const field of formConfig.formFields) {
-      if (field.required && (!formData[field.label] || formData[field.label] === '')) {
-        alert(`${field.label} is required`);
-        return;
+  try {
+    setSubmitting(true);
+    
+    // Create FormData for file uploads
+    const formDataToSend = new FormData();
+    
+    // Add basic form data
+    formDataToSend.append('jobId', jobId);
+    formDataToSend.append('candidateEmail', authUser.email);
+    formDataToSend.append('candidateName', formData['Full Name'] || authUser.email);
+    
+    // Prepare responses with proper value handling
+    const responses = formConfig.formFields.map((field, index) => {
+      const fieldValue = formData[field.label];
+      
+      console.log(`Processing field ${field.label} (${field.fieldType}):`, fieldValue);
+      
+      if (field.fieldType === 'file') {
+        // For file fields, append the file separately
+        if (fieldValue) {
+          formDataToSend.append(`file_${index}`, fieldValue);
+        }
+        
+        return {
+          fieldLabel: field.label,
+          fieldType: field.fieldType,
+          value: fieldValue ? fieldValue.name : null
+        };
+      } else if (field.fieldType === 'checkbox') {
+        // Handle checkbox arrays
+        return {
+          fieldLabel: field.label,
+          fieldType: field.fieldType,
+          value: Array.isArray(fieldValue) ? fieldValue : []
+        };
+      } else {
+        // Handle all other field types
+        return {
+          fieldLabel: field.label,
+          fieldType: field.fieldType,
+          value: fieldValue || '' // Ensure we send empty string instead of undefined/null
+        };
       }
-    }
+    });
 
-    try {
-      setSubmitting(true);
-      
-      const responses = formConfig.formFields.map(field => ({
-        fieldLabel: field.label,
-        fieldType: field.fieldType,
-        value: formData[field.label]
-      }));
+    console.log("Prepared responses:", responses);
 
-      const payload = {
-        jobId,
-        candidateEmail: authUser.email,
-        candidateName: formData['Full Name'] || authUser.email,
-        responses
-      };
+    // Add responses as JSON string
+    formDataToSend.append('responses', JSON.stringify(responses));
+    const response = await axios.post(
+      'http://localhost:5000/api/form/submit',
+      formDataToSend,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      }
+    );
 
-      await axios.post(
-        'http://localhost:5000/api/form/submit',
-        payload,
-        { withCredentials: true } // Use cookies for auth
-      );
+    console.log("Submission response:", response.data);
 
+    if (response.data) {
       setApplicationSubmitted(true);
-      
-    } catch (error: any) {
-      console.error("Error submitting form:", error);
-      alert(error.response?.data?.message || "Failed to submit application");
-    } finally {
-      setSubmitting(false);
     }
-  };
+    
+  } catch (error: any) {
+    console.error("Error submitting form:", error);
+    console.error("Error response:", error.response?.data);
+    alert(error.response?.data?.message || "Failed to submit application");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const handleLoginToSignup = () => {
     setShowLogin(false);
@@ -253,12 +301,28 @@ const PublicJobApplicationForm = () => {
 
       case 'file':
         return (
-          <input
-            type="file"
-            required={field.required}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            onChange={(e) => handleInputChange(field.label, e.target.files?.[0] || null)}
-          />
+          <div>
+            <input
+              type="file"
+              required={field.required}
+              accept='.pdf,.doc,.docx'
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                handleInputChange(field.label, file);
+              }}
+            />
+            {field.required && (
+              <p className="text-sm text-gray-500 mt-1">
+                Accepted formats: PDF, DOC, DOCX (Max: 10 MB)
+              </p>
+            )}
+            {formData[field.label] && (
+              <p className="text-sm text-green-600 mt-1">
+                Selected: {formData[field.label].name}
+              </p>
+            )}
+          </div>
         );
 
       default:

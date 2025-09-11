@@ -12,21 +12,48 @@ import hremoImageDesktop from "../../public/images/image-hero-desktop.png";
 import hremoImageMobile from "../../public/images/image-hero-mobile.png";
 
 export default function Home() {
-  const { authUser, checkAuth } = useAuth();
+  const { authUser, checkAuth, isCheckingAuth, initializeAuth } = useAuth();
   const role = authUser?.role;
 
   useEffect(() => {
-    checkAuth();
+    initializeAuth();
 
-    fetch("http://localhost:5000/")
-      .then((res) => res.json())
-      .catch((err) => console.log(err));
-  }, [checkAuth]);
+    const token = localStorage.getItem("token");
+    if(token && !authUser) {
+      checkAuth();
+    }
+  }, []);
+
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/", {
+          method: "GET",
+        });
+        
+        if(response.ok) {
+          console.log("Server connection successfully.");
+        }
+      } catch (error) {
+        console.log("server connection failed.", error);
+      }
+    }
+    testConnection();
+  }, []);
 
   useEffect(() => {
     console.log("authUser:", authUser);
     console.log("role:", role);
-  }, [authUser, role]);
+    console.log("isCheckingAuth:", isCheckingAuth);
+  }, [authUser, role, isCheckingAuth]);
+
+  if(isCheckingAuth) {
+    return(
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen w-full bg-white">
@@ -44,7 +71,7 @@ export default function Home() {
       {role === "hire_manager" && (
         <Hero
           button={
-            <>
+            <div className="flex gap-4">
               <Link href="/hireprocess">
                 <button className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90 mr-3">
                   Hire Next Candidates
@@ -55,7 +82,7 @@ export default function Home() {
                   See Our Job Lists
                 </button>
               </Link>
-            </>
+            </div>
           }
           text="As a hiring manager, streamline hiring and manage your candidates."
         />
@@ -65,11 +92,19 @@ export default function Home() {
       {role === "candidate" && (
         <Hero
           button={
-            <Link href="/joblists">
-              <button className="border-balck w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90">
-                See Our Job Lists
-              </button>
-            </Link>
+            <div className="flex gap-4">
+                <Link href="/joblists">
+                  <button className="border-balck w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90">
+                    See Our Job Lists
+                  </button>
+                </Link>
+                <Link href="/profile">
+                  <button className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90">
+                    Update Profile
+                  </button>
+                </Link>
+            </div>
+           
           }
           text="As a candidate, explore jobs tailored for you and apply instantly."
         />

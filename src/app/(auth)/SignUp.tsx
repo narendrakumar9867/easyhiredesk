@@ -12,18 +12,19 @@ interface FormData {
 interface SignUpPageProps {
   isOpen: boolean;
   onClose: () => void;
+  onLoginClick?: () => void; // Add this prop for navigation to login
 }
 
-export default function SignUpPage({ isOpen, onClose }: SignUpPageProps) {
+export default function PublicFormSignUp({ isOpen, onClose, onLoginClick }: SignUpPageProps) {
   if(!isOpen) return null;
 
   const [formData, setFormData] = useState<FormData>({
-    role: "",
+    role: "candidate", // Default to candidate for job application
     email: "",
     password: "",
   });
 
-  const { signup, isSigningUp} = useAuth();
+  const { signup, isSigningUp } = useAuth();
 
   const validateEmail = (email: string): boolean => {
     if(!email) {
@@ -112,7 +113,7 @@ export default function SignUpPage({ isOpen, onClose }: SignUpPageProps) {
 
         <h2 className="text-2xl font-bold mb-4 text-center">Create your account</h2>
         <p className="text-gray-600 text-sm mb-6 text-center">
-          Enter your email address to creating in to your account
+          Create an account to apply for this position
         </p>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -125,9 +126,8 @@ export default function SignUpPage({ isOpen, onClose }: SignUpPageProps) {
             required
             className="w-full px-4 py-2 border rounded-lg focus:outline-none"
           >
-            <option value="">--Select Role--</option>
-            <option value="hire_manager">Hire Manager</option>
             <option value="candidate">Candidate</option>
+            <option value="hire_manager">Hire Manager</option>
           </select> 
           <input
             type="email"
@@ -144,37 +144,35 @@ export default function SignUpPage({ isOpen, onClose }: SignUpPageProps) {
             value={formData.password}
             onChange={handleInputChange}
             disabled={isSigningUp}
-            placeholder="Password"
+            placeholder="Password (min 6 characters)"
             className="w-full px-4 py-2 border rounded-lg focus:outline-none"
           />
           <button
             type="submit"
             disabled={isSigningUp}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {isSigningUp ? "Creating account..." : "Continue"}
+            {isSigningUp ? "Creating account..." : "Create Account"}
           </button>
         </form>
+
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-600">
+            Already have an account?{' '}
+            <button
+              onClick={onLoginClick}
+              className="text-blue-600 hover:underline"
+            >
+              Log in here
+            </button>
+          </p>
+        </div>
 
         <p className="text-xs text-gray-500 mt-3 text-center">
           By proceeding you accept our{" "}
           <a href="#" className="text-blue-600">Terms of Use</a> and{" "}
           <a href="#" className="text-blue-600">Privacy Policy</a>.
         </p>
-
-        <div className="my-4 flex items-center">
-          <hr className="flex-grow border-gray-300" />
-          <span className="px-2 text-gray-500 text-sm">or</span>
-          <hr className="flex-grow border-gray-300" />
-        </div>
-
-        <button 
-          disabled={isSigningUp}
-          className="w-full flex items-center justify-center gap-2 border rounded-lg py-2 mb-2 hover:bg-gray-50">
-          <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" className="h-5 w-5" />
-          Continue with Google
-        </button>
-
       </div>
     </div>
   );
