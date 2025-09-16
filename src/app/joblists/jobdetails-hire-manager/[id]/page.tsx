@@ -1,9 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import { useAuth } from "@/src/hooks/useAuth";
+import Navbar from '@/src/components/Navbar';
+import FooterLogin from '@/src/components/FooterLogin';
 
 interface Job {
   _id: string;
@@ -28,6 +30,11 @@ interface FormResponse {
   status: 'pending' | 'selected' | 'rejected';
   submittedAt: string;
   notes?: string;
+  roundStatuses?: {
+    round: number;
+    status: 'pending' | 'selected' | 'rejected';
+    notes?: string;
+  }[];
 }
 
 interface JobRounds {
@@ -37,18 +44,16 @@ interface JobRounds {
 }
 
 const JobDetailsHireManager: React.FC = () => {
-  const router = useRouter();
   const params = useParams();
-  const { authUser, token } = useAuth();
+  const { token } = useAuth();
   const jobId = params?.id as string;
-  
   const [job, setJob] = useState<Job | null>(null);
   const [jobRounds, setJobRounds] = useState<JobRounds | null>(null);
   const [candidateResponses, setCandidateResponses] = useState<FormResponse[]>([]);
+  const [openCandidateId, setOpenCandidateId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null); // Track which candidate is being updated
-  
   const [activeTab, setActiveTab] = useState<string>('Job details');
 
   // Fetch job details, rounds, and candidate responses
@@ -58,7 +63,6 @@ const JobDetailsHireManager: React.FC = () => {
       
       try {
         setLoading(true);
-        
         // Fetch job details
         console.log("Fetching job details for jobId:", jobId);
         const jobResponse = await axios.get(`http://localhost:5000/api/jobs/${jobId}`, {
@@ -66,7 +70,6 @@ const JobDetailsHireManager: React.FC = () => {
         });
         console.log("Job response:", jobResponse.data);
         setJob(jobResponse.data.job);
-        
         // Fetch rounds for this job
         try {
           console.log("Fetching rounds for jobId:", jobId);
@@ -82,7 +85,6 @@ const JobDetailsHireManager: React.FC = () => {
           console.log("No rounds found for this job yet:", roundsError.response?.data?.message);
           setJobRounds(null);
         }
-        
         // Fetch candidate responses
         try {
           console.log("Fetching candidate responses for jobId:", jobId);
@@ -111,26 +113,71 @@ const JobDetailsHireManager: React.FC = () => {
     fetchJobDetails();
   }, [jobId, token]);
 
-  const updateCandidateStatus = async (responseId: string, status: 'selected' | 'rejected', notes?: string) => {
+  const viewUploadedFile = async (responseId: string, fieldLabel: string) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/form/file/${responseId}/${fieldLabel}`, {
+        headers: { Authorization: `Bearer ${token}`}
+      });
+
+      if(response.data.success) {
+        // for opening the file in new tab
+        window.open(response.data.data.fileUrl);
+        console.log("Error in file opening", viewUploadedFile);
+      }
+    } catch (error) {
+      console.error("Error viewing file:", error);
+      alert("Failed to load file");
+    }
+  }
+
+  const updateCandidateStatus = async (responseId: string, status: 'selected' | 'rejected', round: number = 1, notes?: string) => {
     try {
       setUpdating(responseId);
       
-      console.log(`Updating candidate ${responseId} status to ${status}`);
+      console.log(`Updating candidate ${responseId} status to ${status} for round ${round}`);
       const response = await axios.put(
         `http://localhost:5000/api/form/update-status/${responseId}`,
-        { status, notes: notes || '' },
+        { status, notes: notes || '', round },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
       console.log("Status update response:", response.data);
       
-      // Update local state
+      // Update local state with round specific status
       setCandidateResponses(prev => 
-        prev.map(candidate => 
-          candidate._id === responseId 
-            ? { ...candidate, status, notes: notes || candidate.notes }
-            : candidate
-        )
+        prev.map(candidate => {
+          if(candidate._id === responseId) {
+            const updatedCandidate = { ...candidate };
+
+            if(!updatedCandidate.roundStatuses) {
+              updatedCandidate.roundStatuses = [];
+            }
+            const existingRoundIndex = updatedCandidate.roundStatuses.findIndex(rs => rs.round === round);
+
+            if(existingRoundIndex >= 0) {
+              updatedCandidate.roundStatuses[existingRoundIndex] = {
+                ...updatedCandidate.roundStatuses[existingRoundIndex],
+                status,
+                notes: notes || updatedCandidate.roundStatuses[existingRoundIndex].notes
+              };
+            }
+            else {
+              updatedCandidate.roundStatuses.push({
+                round,
+                status,
+                notes: notes || " "
+              });
+            }
+
+            if(round === 1) {
+              updatedCandidate.status = status;
+              updatedCandidate.notes = notes || candidate.notes;
+            }
+
+            return updatedCandidate;
+          }
+          return candidate;
+        })
       );
       
       // Show success message
@@ -199,267 +246,351 @@ const JobDetailsHireManager: React.FC = () => {
     });
   };
 
-  const renderCandidateCard = (candidate: FormResponse, index: number) => {
-    const isUpdating = updating === candidate._id;
-    
-    return (
-      <div key={candidate._id} className="bg-white border border-gray-300 rounded-lg p-6 mb-4 hover:shadow-lg transition-shadow">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">
-              {index + 1}. {candidate.candidateName}
-            </h3>
-            <p className="text-blue-600 hover:underline cursor-pointer mb-1">
-              <a href={`mailto:${candidate.candidateEmail}`}>
-                {candidate.candidateEmail}
-              </a>
-            </p>
-            <p className="text-sm text-gray-500">
-              Applied: {new Date(candidate.submittedAt).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
-            </p>
-          </div>
-          
-          {/* Status badge */}
-          <div className="mb-2">
-            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-              candidate.status === 'selected' 
-                ? 'bg-green-100 text-green-800'
-                : candidate.status === 'rejected'
-                ? 'bg-red-100 text-red-800'
-                : 'bg-yellow-100 text-yellow-800'
-            }`}>
-              {candidate.status.charAt(0).toUpperCase() + candidate.status.slice(1)}
-            </span>
-          </div>
-        </div>
+  const renderCandidateCard = (candidate: FormResponse, index: number, roundNumber?: number) => {
+      const isUpdating = updating === candidate._id;
+      const isOpen = openCandidateId === candidate._id;
 
-        {/* Action buttons */}
-        <div className="flex space-x-2 mb-4">
-          <button
-            onClick={() => updateCandidateStatus(candidate._id, 'selected')}
-            disabled={isUpdating}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-              candidate.status === 'selected'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-green-100 hover:text-green-700'
-            }`}
-          >
-            {isUpdating ? 'Updating...' : 'Select'}
-          </button>
-          <button
-            onClick={() => updateCandidateStatus(candidate._id, 'rejected')}
-            disabled={isUpdating}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-              candidate.status === 'rejected'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-red-100 hover:text-red-700'
-            }`}
-          >
-            {isUpdating ? 'Updating...' : 'Reject'}
-          </button>
-        </div>
+      const getCurrentRoundFromTab = (tab: string): number => {
+        if(tab === "Job details") return 1;
+        const match = tab.match(/Round (\d+)/);
+        return match ? parseInt(match[1]) : 1;
+      };
 
-        {/* Candidate responses */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-gray-900 border-b pb-2">Application Details:</h4>
-          <div className="grid gap-3">
-            {candidate.responses.map((response, responseIndex) => (
-              <div key={responseIndex} className="border-l-4 border-blue-200 pl-4 py-2">
-                <p className="text-sm font-medium text-gray-700 mb-1">
-                  {response.fieldLabel}:
-                </p>
-                <p className="text-gray-900">
-                  {Array.isArray(response.value) 
-                    ? response.value.length > 0 
-                      ? response.value.join(', ')
-                      : 'No options selected'
-                    : response.value || 'No answer provided'
-                  }
-                </p>
+      const getRoundStatus = (candidate: FormResponse, round: number): string => {
+        if(round === 1) return candidate.status;
+
+        const roundStatus = candidate.roundStatuses?.find(rs => rs.round === round);
+        return roundStatus?.status || "pending";
+      }
+      
+      return (
+        <div key={candidate._id} className="bg-white border border-gray-300 rounded-lg p-6 mb-4 hover:shadow-lg transition-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1 cursor-pointer" onClick={() => setOpenCandidateId(isOpen ? null : candidate._id)}>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                {index + 1}. {candidate.candidateName}
+              </h3>
+              <p className="text-sm text-gray-500">
+                Applied: {new Date(candidate.submittedAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
+            
+            {/* Status badge */}
+            <div className="mb-2">
+              <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)) === 'selected'  // ✅ Use current round status
+                    ? 'bg-green-100 text-green-800'
+                    : getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)) === 'rejected'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)).charAt(0).toUpperCase() + getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)).slice(1)} {/* ✅ Show current round status */}
+              </span>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex space-x-2 mb-4">
+            <button
+              onClick={() => {
+                const currentRound = getCurrentRoundFromTab(activeTab);
+                updateCandidateStatus(candidate._id, "selected", currentRound);
+              }}
+              disabled={isUpdating}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)) === 'selected'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-green-100 hover:text-green-700'
+              }`}
+            >
+              {isUpdating ? 'Updating...' : 'Select'}
+            </button>
+            <button
+              onClick={() => {
+                const currentRound = getCurrentRoundFromTab(activeTab);
+                updateCandidateStatus(candidate._id, "rejected", currentRound); // ✅ Add round parameter
+              }}
+              disabled={isUpdating}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)) === 'rejected'  // ✅ Use current round status
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-red-100 hover:text-red-700'
+              }`}
+            >
+              {isUpdating ? 'Updating...' : 'Reject'}
+            </button>
+          </div>
+
+          {/* Candidate responses */}
+          {isOpen && (
+            <>
+             <div className="space-y-3">
+                <h4 className="font-medium text-gray-900 border-b pb-2">Application Details:</h4>
+                <div className="grid gap-3">
+                  {candidate.responses.map((response, responseIndex) => (
+                    <div key={responseIndex} className="border-l-4 border-gray-200 pl-4 py-2">
+                      <p className="text-sm font-medium text-gray-700 mb-1">
+                        {response.fieldLabel}:
+                      </p>
+                      
+                      {/* Handle file responses differently */}
+                      {response.fieldType === 'file' ? (
+                        <div className="flex items-center space-x-2">
+                          {response.value && response.value.fileName ? (
+                            <>
+                              <span className="text-gray-900">{response.value.fileName}</span>
+                              <button
+                                onClick={() => viewUploadedFile(candidate._id, response.fieldLabel)}
+                                className="bg-black text-white px-3 py-1 rounded-md text-sm hover:text-white hover:bg-gray-500 transition-colors"
+                              >
+                                View File
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-gray-500 italic">No file uploaded</span>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-gray-900">
+                          {Array.isArray(response.value) 
+                            ? response.value.length > 0 
+                              ? response.value.join(', ')
+                              : 'No options selected'
+                            : response.value || 'No answer provided'
+                          }
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {candidate.notes && (
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg border-l-4 border-yellow-400">
-            <p className="text-sm font-medium text-gray-700 mb-1">Notes:</p>
-            <p className="text-gray-900">{candidate.notes}</p>
-          </div>
-        )}
+              {candidate.notes && (
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg border-l-4 border-yellow-400">
+                  <p className="text-sm font-medium text-gray-700 mb-1">Notes:</p>
+                  <p className="text-gray-900">{candidate.notes}</p>
+                </div>
+              )}
+            </>
+          )}
       </div>
     );
   };
 
   const renderTabContent = () => {
-    try {
-      switch (activeTab) {
-        case 'Job details':
-          return (
-            <div className="bg-white rounded-lg p-6 mb-6">
-              <div className="mb-6">
-                <h3 className="text-black text-lg font-semibold mb-4">Company Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Company Name</p>
-                    <p className="text-black font-semibold">{job?.companyName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Location</p>
-                    <p className="text-black">{job?.location}</p>
-                  </div>
-                  {job?.companyWebsite && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Website</p>
-                      <a 
-                        href={job.companyWebsite} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        {job.companyWebsite}
-                      </a>
-                    </div>
-                  )}
-                  {job?.socialLinks && job.socialLinks.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Social Links</p>
-                      <div className="flex space-x-2">
-                        {job.socialLinks.map((link, index) => (
-                          <a 
-                            key={index}
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline capitalize"
-                          >
-                            {link.platform}
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-black text-lg font-semibold mb-4">Job Description</h3>
-                <div className="prose prose-blue max-w-none">
-                  {renderMarkdown(job?.aboutJob || "")}
-                </div>
-              </div>
+  // Helper function to get current round from tab
+  const getCurrentRoundFromTab = (tab: string): number => {
+    if (tab === 'Job details') return 1;
+    const match = tab.match(/Round (\d+)/);
+    return match ? parseInt(match[1]) : 1;
+  };
 
-              {/* Show selected rounds info or no rounds message */}
-              {jobRounds && jobRounds.selectedRounds && Array.isArray(jobRounds.selectedRounds) && jobRounds.selectedRounds.length > 0 ? (
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-2">Interview Process</h4>
-                  <p className="text-gray-600 mb-2">
-                    This job has <strong>{jobRounds.selectedRounds.length}</strong> interview rounds:
-                  </p>
-                  <ul className="list-disc list-inside text-gray-700">
-                    {jobRounds.selectedRounds.map((round, index) => (
-                      <li key={index}>{round}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <h4 className="text-lg font-semibold text-yellow-800 mb-2">Interview Process</h4>
-                  <p className="text-yellow-700">
-                    No interview rounds have been set up for this job yet. Please configure the hiring process first.
-                  </p>
-                  <Link 
-                    href={`/rounds?jobId=${jobId}&rounds=3`}
-                    className="inline-block mt-2 bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition-colors"
-                  >
-                    Configure Rounds
-                  </Link>
-                </div>
-              )}
+  // Helper function to get round-specific status
+  const getRoundStatus = (candidate: FormResponse, round: number): string => {
+    if (round === 1) return candidate.status; // Use main status for Round 1
+    
+    const roundStatus = candidate.roundStatuses?.find(rs => rs.round === round);
+    return roundStatus?.status || 'pending';
+  };
 
-              {/* Application link */}
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="text-lg font-semibold text-blue-800 mb-2">Application Link</h4>
-                <p className="text-blue-700 mb-3">
-                  Share this link with candidates to apply for this position:
-                </p>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={`${window.location.origin}/apply/${jobId}`}
-                    className="flex-1 px-3 py-2 border border-blue-300 rounded-md bg-white text-sm"
-                  />
-                  <button
-                    onClick={() => {
-                      const shareLink = `${window.location.origin}/apply/${jobId}`;
-                      navigator.clipboard.writeText(shareLink);
-                      alert('Application link copied to clipboard!');
-                    }}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Copy
-                  </button>
+  // Helper function to get candidates for a specific round
+  const getCandidatesForRound = (round: number) => {
+    if (round === 1) {
+      // Round 1 shows all candidates
+      return candidateResponses;
+    } else {
+      // Other rounds show candidates selected from previous round
+      return candidateResponses.filter(candidate => {
+        const prevRoundStatus = getRoundStatus(candidate, round - 1);
+        return prevRoundStatus === 'selected';
+      });
+    }
+  };
+
+  // Helper function to get status counts for a specific round
+  const getStatusCounts = (round: number, candidates: FormResponse[]) => {
+    const selected = candidates.filter(c => getRoundStatus(c, round) === 'selected').length;
+    const rejected = candidates.filter(c => getRoundStatus(c, round) === 'rejected').length;
+    const pending = candidates.filter(c => getRoundStatus(c, round) === 'pending').length;
+    
+    return { selected, rejected, pending };
+  };
+
+  try {
+    switch (activeTab) {
+      case 'Job details':
+        return (
+          <div className="bg-white rounded-lg p-6 mb-6">
+            <div className="mb-6">
+              <h3 className="text-black text-lg font-semibold mb-4">Company Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Company Name</p>
+                  <p className="text-black font-semibold">{job?.companyName}</p>
                 </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Location</p>
+                  <p className="text-black">{job?.location}</p>
+                </div>
+                {job?.companyWebsite && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Website</p>
+                    <a 
+                      href={job.companyWebsite} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {job.companyWebsite}
+                    </a>
+                  </div>
+                )}
+                {job?.socialLinks && job.socialLinks.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Social Links</p>
+                    <div className="flex space-x-2">
+                      {job.socialLinks.map((link, index) => (
+                        <a 
+                          key={index}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline capitalize"
+                        >
+                          {link.platform}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          );
-        default:
-          // Handle round tabs dynamically
-          if (activeTab.startsWith('Round ')) {
-            const roundNumber = parseInt(activeTab.split(' ')[1]);
             
-            if (roundNumber === 1) {
-              // Show candidate applications for Round 1
-              return (
-                <div className="space-y-4">
-                  <div className="bg-white rounded-lg p-4 mb-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                          Round 1 - Candidate Applications
-                        </h3>
-                        <p className="text-gray-600">
-                          Review and select candidates who submitted their applications.
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-600">
-                          {candidateResponses.length}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          Total Applications
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Status summary */}
-                    {candidateResponses.length > 0 && (
-                      <div className="mt-4 flex space-x-4 text-sm">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                          <span>Selected: {candidateResponses.filter(c => c.status === 'selected').length}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                          <span>Rejected: {candidateResponses.filter(c => c.status === 'rejected').length}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                          <span>Pending: {candidateResponses.filter(c => c.status === 'pending').length}</span>
-                        </div>
-                      </div>
-                    )}
+            <div>
+              <h3 className="text-black text-lg font-semibold mb-4">Job Description</h3>
+              <div className="prose prose-blue max-w-none">
+                {renderMarkdown(job?.aboutJob || "")}
+              </div>
+            </div>
+
+            {/* Show selected rounds info or no rounds message */}
+            {jobRounds && jobRounds.selectedRounds && Array.isArray(jobRounds.selectedRounds) && jobRounds.selectedRounds.length > 0 ? (
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">Interview Process</h4>
+                <p className="text-gray-600 mb-2">
+                  This job has <strong>{jobRounds.selectedRounds.length}</strong> interview rounds:
+                </p>
+                <ul className="list-disc list-inside text-gray-700">
+                  {jobRounds.selectedRounds.map((round, index) => (
+                    <li key={index}>{round}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h4 className="text-lg font-semibold text-yellow-800 mb-2">Interview Process</h4>
+                <p className="text-yellow-700">
+                  No interview rounds have been set up for this job yet. Please configure the hiring process first.
+                </p>
+                <Link 
+                  href={`/rounds?jobId=${jobId}&rounds=3`}
+                  className="inline-block mt-2 bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition-colors"
+                >
+                  Configure Rounds
+                </Link>
+              </div>
+            )}
+
+            {/* Application link */}
+            <div className="mt-6 p-4 bg-gray-50 border border-black rounded-lg">
+              <h4 className="text-lg font-semibold text-black mb-2">Application Link</h4>
+              <p className="text-black mb-3">
+                Share this link with candidates to apply for this position:
+              </p>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={`${window.location.origin}/apply/${jobId}`}
+                  className="flex-1 px-3 py-2 border border-black rounded-md bg-white text-sm"
+                />
+                <button
+                  onClick={() => {
+                    const shareLink = `${window.location.origin}/apply/${jobId}`;
+                    navigator.clipboard.writeText(shareLink);
+                    alert('Application link copied to clipboard!');
+                  }}
+                  className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        // Handle round tabs dynamically
+        if (activeTab.startsWith('Round ')) {
+          const roundNumber = parseInt(activeTab.split(' ')[1]);
+          const candidatesForRound = getCandidatesForRound(roundNumber);
+          const statusCounts = getStatusCounts(roundNumber, candidatesForRound);
+          
+          return (
+            <div className="space-y-4">
+              <div className="bg-white rounded-lg p-4 mb-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                      {roundNumber === 1 
+                        ? 'Round 1 - Candidate Applications' 
+                        : `Round ${roundNumber} - Interview Round`
+                      }
+                    </h3>
+                    <p className="text-gray-600">
+                      {roundNumber === 1 
+                        ? 'Review and select candidates who submitted their applications.'
+                        : `Candidates who were selected from Round ${roundNumber - 1}.`
+                      }
+                    </p>
                   </div>
-                  
-                  {candidateResponses.length === 0 ? (
-                    <div className="bg-white rounded-lg p-8 text-center">
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-black">
+                      {candidatesForRound.length}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {roundNumber === 1 ? 'Total Applications' : 'Qualified Candidates'}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Status summary for current round */}
+                {candidatesForRound.length > 0 && (
+                  <div className="mt-4 flex space-x-4 text-sm">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                      <span>Selected: {statusCounts.selected}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                      <span>Rejected: {statusCounts.rejected}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                      <span>Pending: {statusCounts.pending}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {candidatesForRound.length === 0 ? (
+                <div className="bg-white rounded-lg p-8 text-center">
+                  {roundNumber === 1 ? (
+                    <>
                       <div className="text-gray-400 mb-4">
                         <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -479,66 +610,41 @@ const JobDetailsHireManager: React.FC = () => {
                       >
                         Copy Application Link
                       </button>
-                    </div>
+                    </>
                   ) : (
-                    <div className="space-y-4">
-                      {candidateResponses
-                        .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
-                        .map((candidate, index) => 
-                          renderCandidateCard(candidate, index)
-                        )}
-                    </div>
-                  )}
-                </div>
-              );
-            } else {
-              // For other rounds, show selected candidates from previous round
-              const selectedCandidates = candidateResponses.filter(
-                candidate => candidate.status === 'selected'
-              );
-              
-              return (
-                <div className="space-y-4">
-                  <div className="bg-white rounded-lg p-4 mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                      {activeTab} - Interview Round
-                    </h3>
-                    <p className="text-gray-600">
-                      Candidates who were selected from the previous round.
-                    </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Selected Candidates: {selectedCandidates.length}
-                    </p>
-                  </div>
-                  
-                  {selectedCandidates.length === 0 ? (
-                    <div className="bg-white rounded-lg p-8 text-center">
+                    <>
                       <p className="text-gray-600 mb-4">No candidates selected for this round yet.</p>
                       <p className="text-sm text-gray-500">
-                        Please select candidates from Round 1 first.
+                        Please select candidates from Round {roundNumber - 1} first.
                       </p>
-                    </div>
-                  ) : (
-                    selectedCandidates.map((candidate, index) => 
-                      renderCandidateCard(candidate, index)
-                    )
+                    </>
                   )}
                 </div>
-              );
-            }
-          }
-          return null;
-      }
-    } catch (error) {
-      console.error("Error rendering tab content:", error);
-      return (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-red-800 font-semibold mb-2">Error Loading Content</h3>
-          <p className="text-red-600">There was an error loading this tab content. Please refresh the page.</p>
-        </div>
-      );
+              ) : (
+                <div className="space-y-4">
+                  {candidatesForRound
+                    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+                    .map((candidate, index) => {
+                      // Pass the current round number to renderCandidateCard
+                      return renderCandidateCard(candidate, index, roundNumber);
+                    })}
+                </div>
+              )}
+            </div>
+          );
+        }
+        return null;
     }
-  };
+  } catch (error) {
+    console.error("Error rendering tab content:", error);
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <h3 className="text-red-800 font-semibold mb-2">Error Loading Content</h3>
+        <p className="text-red-600">There was an error loading this tab content. Please refresh the page.</p>
+      </div>
+    );
+  }
+};
 
   if (loading) {
     return (
@@ -565,8 +671,9 @@ const JobDetailsHireManager: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="flex flex-col min-h-screen bg-gray-50 max-w-full">
+      < Navbar />
+      <div className="max-w-full px-9 py-3 flex-1">
         {/* Back Button */}
         <div className="flex items-center justify-between mb-8">
           <Link href="/joblists" className="flex items-center space-x-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md transition-colors duration-200">
@@ -600,12 +707,6 @@ const JobDetailsHireManager: React.FC = () => {
                   }`}
                 >
                   {tab}
-                  {/* Show candidate count for Round 1 */}
-                  {tab === 'Round 1' && candidateResponses.length > 0 && (
-                    <span className="ml-2 bg-blue-600 text-white rounded-full px-2 py-1 text-xs">
-                      {candidateResponses.length}
-                    </span>
-                  )}
                 </button>
                 {index < tabs.length - 1 && (
                   <div className="flex-1 h-px bg-black mx-4 min-w-[20px]"></div>
@@ -620,6 +721,8 @@ const JobDetailsHireManager: React.FC = () => {
           {renderTabContent()}
         </div>
       </div>
+
+      < FooterLogin />
     </div>
   );
 };

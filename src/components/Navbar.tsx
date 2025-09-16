@@ -71,8 +71,8 @@ export default function Navbar() {
 
     return(
         <nav>
-            <div className="mx-auto flex w-full max-w-7xl justify-between px-3 py-7 text-sm border-b">
-                <h1 className="py-1 md:py-0 text-4xl font-extrabold tracking-wide bg-gradient-to-r bg-clip-text text-black drop-shadow-md">
+            <div className="mx-auto flex w-full max-w justify-between px-3 py-7 text-sm border-b">
+                <h1 className="py-1 md:py-0 px-5 text-4xl font-extrabold tracking-wide bg-gradient-to-r bg-clip-text text-black drop-shadow-md">
                     Easyhire<span className="text-shadow-black">Desk</span>
                 </h1>
                 
@@ -114,7 +114,7 @@ export default function Navbar() {
                     </div>
                 </section>
 
-                <section className="hidden md:flex items-center gap-8">
+                <section className="hidden md:flex items-center gap-8 px-7">
                     {!authUser ? (
                         <>
                             <button onClick={() => setShowLogin(true)} className="h-fit text-neutral-400 transition-all hover:text-black/90">
@@ -257,7 +257,7 @@ function MobileSideMenu({ closeSideMenu }: { closeSideMenu: () => void}) {
                     })}
                 </div>
 
-                <section className="flex flex-col gap-8 mt-4 items-center gap-3">
+                <section className="flex flex-col gap-8 mt-4 items-center px-5">
                     {!authUser ? (
                         <>
                             <button onClick={() => setShowLogin(true)} className="h-fit text-neutral-400 transition-all hover:text-black/90">

@@ -5,21 +5,21 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer className="bg-white mt-10">
-      <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="max-w mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-    <h1 className="text-4xl font-extrabold tracking-wide bg-gradient-to-r bg-clip-text drop-shadow-md py-2 text-black">
-      Easyhire<span className="text-gray-400">Desk</span>
-    </h1>
+          <h1 className="text-4xl font-extrabold tracking-wide bg-gradient-to-r bg-clip-text drop-shadow-md py-2 text-black">
+            Easyhire<span className="text-gray-400">Desk</span>
+          </h1>
 
-    <p className="text-gray-600 mt-3 text-sm">
-      Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. 
-      Velit officia consequat duis enim velit mollit.
-    </p>
+          <p className="text-gray-600 mt-3 text-sm">
+            Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. 
+            Velit officia consequat duis enim velit mollit.
+          </p>
 
-    <Link href="#" className="text-blue-600 mt-3 inline-block text-sm">
-      Learn more
-    </Link>
-  </div>
+          <Link href="#" className="text-blue-600 mt-3 inline-block text-sm">
+            Learn more
+          </Link>
+        </div>
 
         <div className="md:px-36">
           <h3 className="font-semibold mb-3">Services</h3>
@@ -52,7 +52,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="border-t py-6 px-6 flex flex-col md:flex-row items-center justify-between max-w-7xl mx-auto">
+      <div className="border-t py-6 px-6 flex flex-col md:flex-row items-center justify-between max-w mx-auto">
         <p className="text-sm text-gray-600">© Copyright 2025, All Rights Reserved</p>
         <div className="flex gap-4 mt-4 md:mt-0">
           <Link href="https://www.linkedin.com/in/narendrakumar-kumawat-474647257/"><FaLinkedin className="text-gray-700 hover:text-blue-500 text-lg" /></Link>
