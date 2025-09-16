@@ -4,14 +4,19 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useAuth } from "@/src/hooks/useAuth";
 import { axiosInstance } from "@/src/utils/axios";
+import Navbar from '@/src/components/Navbar';
+import FooterLogin from '@/src/components/FooterLogin';
 
 export default function CandidateJobDetailsPage() {
     const params = useParams();
     const applicationId = params?.id; // This is now application ID, not job ID
-    const { authUser, token } = useAuth();
-    const [selectedRound, setSelectedRound] = useState(1);
+    const { token } = useAuth();
+    const [selectedRound, setSelectedRound] = useState(0);
     const [applicationData, setApplicationData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [jobRounds, setJobRounds] = useState(null);
+    const [emailTemplate, setEmailTemplate] = useState(null);
+    const [emailHistory, setEmailHistory] = useState([]);
     
     useEffect(() => {
         const fetchApplicationData = async () => {
@@ -28,6 +33,31 @@ export default function CandidateJobDetailsPage() {
                 // Fetch application data - this should return application with populated job data
                 const response = await axiosInstance.get(`/candidate/application/${applicationId}`, config);
                 setApplicationData(response.data.application);
+
+                // Line 26 ke baad add karo for debugging:
+console.log('Application data received:', response.data.application);
+console.log('Email history:', response.data.application.emailHistory);
+
+                if(response.data.application && response.data.application.jobId && response.data.application.jobId._id) {
+                    try {
+                        const roundsResponse = await axiosInstance.get(`/rounds/${response.data.application.jobId._id}`, config);
+                        if(roundsResponse.data && roundsResponse.data.data) {
+                            setJobRounds(roundsResponse.data.data);
+                        }
+                    } catch (error) {
+                        console.log("No rounds found for this job yet:", error.response?.data?.message);
+                        setJobRounds(null);
+                    }
+
+                    try {
+                        const emailDetailsResponse = await axiosInstance.get(`/rounds/${response.data.application.jobId._id}`, config);
+                        if(emailDetailsResponse.data && emailDetailsResponse.data.data) {
+                            setEmailTemplate(emailDetailsResponse.data.data);
+                        }
+                    } catch (error) {
+                        console.log("No email templates found:", error);   
+                    }
+                } 
             } catch (error) {
                 console.error("Error fetching application data:", error);
             } finally {
@@ -62,58 +92,216 @@ export default function CandidateJobDetailsPage() {
     const jobData = applicationData.jobId; // Job data is populated in the application object
 
     // Fixed rounds for now (will make dynamic later as you mentioned)
-    const applicationRounds = [
-        { 
-            id: 1, 
-            name: 'Round 1', 
-            status: 'pending',
-            title: 'Application Review',
-            description: 'Your application has been submitted and is under review by the HR team.',
-            duration: 'N/A',
-            type: 'Document Review',
-        },
-        { 
-            id: 2, 
-            name: 'Round 2', 
-            status: 'pending',
-            title: 'HR Screening Call',
-            description: 'HR screening call to discuss your background, experience, and interest in the role.',
-            duration: '30 minutes',
-            type: 'Phone/Video Call',
-        },
-        { 
-            id: 3, 
-            name: 'Round 3', 
-            status: 'pending',
-            title: 'Technical Assessment',
-            description: 'Comprehensive technical evaluation including coding challenges and system design.',
-            duration: '90 minutes',
-            type: 'Online Assessment',
-        }
-    ];
+    const generateApplicationRounds = () => {
+        const rounds = [
+            { 
+                id: 0, 
+                name: 'Job Details', 
+                title: 'Job Overview & Application Details',
+                description: 'View complete job information and your application details.',
+                duration: 'N/A',
+                type: 'Overview',
+            },
+        ];
 
-    const getStatusColor = (status) => {
+        if(jobRounds && jobRounds.selectedRounds && Array.isArray(jobRounds.selectedRounds)) {
+            jobRounds.selectedRounds.forEach((roundName, index) => {
+                rounds.push({
+                    id: index + 1,
+                    name: `Round ${index + 1}`,
+                    title: roundName,
+                    description: 'Here the mail from details share for this round',
+                    duration: 'TBD',
+                    type: 'Interview Round',
+                });
+            });
+        }
+        return rounds;
+    };
+
+    const applicationRounds = generateApplicationRounds();
+
+    const getOverallApplicationStatus = () => {
+        const interviewRounds = applicationRounds.filter(round => round.id > 0);
+        const totalRounds = interviewRounds.length;
+
+        let selectedCount = 0;
+        let rejectedCount = 0;
+        let pendingCount = 0;
+
+        for(let i = 1; i <= totalRounds; i++) {
+            const status = getRoundStatus(i);
+
+            if(status === "selected" || status === "completed") {
+                selectedCount++;
+            }
+            else if(status === "rejected") {
+                rejectedCount++;
+            }
+            else {
+                pendingCount++;
+            }
+        }
+
+        if(rejectedCount > 0) return "rejected";
+            if(selectedCount === totalRounds) return "selected";
+            if(selectedCount > 0) return "in-progress";
+            return "pending";
+    }
+
+    const getButtonStatusColor = (roundId, isSelected) => {
+        const status = getRoundStatus(roundId);
+
+        if(isSelected) {
+            return "bg-black text-white shadow-md transform scale-105";
+        }
+
         switch (status) {
-            case 'completed': return 'text-green-400';
-            case 'in-progress': return 'text-blue-400';
-            case 'rejected': return 'text-red-400';
-            case 'pending': default: return 'text-yellow-400';
+            case 'selected':
+            case 'completed' : return 'bg-green-600 hover:bg-green-700 text-white hover:transform hover:scale-102';
+            case 'rejected': return 'bg-red-600 hover:bg-red-700 text-white hover:transform hover:scale-102';
+            case 'in-progress': return 'bg-blue-600 hover:bg-blue-700 text-white hover:transform hover:scale-102';
+            case 'pending':
+            default: return 'bg-gray-700 hover:bg-gray-600 text-white hover:transform hover:scale-102';
         }
     };
 
     const getStatusBgColor = (status) => {
         switch (status) {
-            case 'completed': return 'bg-green-100 text-green-700';
+            case 'completed': 
+            case 'selected' : return 'bg-green-100 text-green-700';
             case 'in-progress': return 'bg-blue-100 text-blue-700';
             case 'rejected': return 'bg-red-100 text-red-700';
             case 'pending': default: return 'bg-yellow-100 text-yellow-700';
         }
     };
 
-    const renderRoundContent = () => {
-        const currentRound = applicationRounds.find(round => round.id === selectedRound);
+    const getRoundStatus = (roundId) => {
+        if(roundId === 0) {
+            return "completed";
+        }
+
+        if(roundId === 1) {
+            if(applicationData.roundStatuses && applicationData.roundStatuses.round) {
+                return applicationData.roundStatuses.round;
+            }
+            return applicationData.status || "pending";
+        }
+
+        if(applicationData.roundStatuses && applicationData.roundStatuses[`round${roundId}`]) {
+            return applicationData.roundStatuses[`round${roundId}`];
+        }
+
+        const roundStatus = applicationData.roundStatuses?.find(rs => rs.round == roundId);
+        return roundStatus?.status || "pending";
+    };
+
+    const getEmailForRoundAndStatus = (roundId, status) => {
+        const emailRecord = applicationData.emailHistory?.find(email =>
+            email.round === roundId && email.emailType === status  
+        );
+
+        if(emailRecord) {
+            return{
+                sent: true,
+                sentAt: emailRecord.sentAt,
+                sentBy: emailRecord.sentBy,
+                messageId: emailRecord.messageId
+            };
+        }
+        return { sent: false };
+    };
+
+    const renderEmailContent = (roundId) => {
+        const currentStatus = getRoundStatus(roundId);
+        const emailInfo = getEmailForRoundAndStatus(roundId, currentStatus);
+
+        if(!emailInfo.sent) {
+            return(
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p className="text-yellow-800">No email sent yet for this round.</p>
+                </div>
+            );
+        }
+
+        const isSelected = currentStatus === "selected";
         
-        if (selectedRound === 1) {
+        return(
+            <div className={`border rounded-lg p-6 ${isSelected ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+                <div className="flex items-center justify-between mb-4">
+                    <h5 className={`font-semibold ${isSelected ? 'text-green-800' : 'text-red-800'}`}>
+                        {isSelected ? 'Selection' : 'Rejection'} Email Received
+                    </h5>
+                    <span className="text-sm text-gray-500">
+                        {new Date(emailInfo.sentAt).toLocaleString()}
+                    </span>
+                </div>
+                <div className="space-y-2">
+                    <p className="text-sm text-gray-600">
+                        <strong>From:</strong> {emailInfo.sentBy || 'Hiring Team'}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                        <strong>Status:</strong> 
+                        <span className={`ml-2 px-2 py-1 rounded text-xs ${isSelected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {isSelected ? 'SELECTED' : 'NOT SELECTED'}
+                        </span>
+                    </p>
+                    {isSelected ? (
+                        <div className="mt-4 p-3 bg-white rounded border">
+                            <p className="text-green-700">
+                                Congratulations! You have been selected for the next round. 
+                                You will be contacted soon with further details.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="mt-4 p-3 bg-white rounded border">
+                            <p className="text-red-700">
+                                Thank you for your interest. After careful consideration, 
+                                we have decided to move forward with other candidates.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        )
+    }
+
+    const renderMarkdown = (text: string) => {
+        if (!text) return <p className="text-gray-500 italic">No content added yet...</p>;
+
+        return text.split('\n').map((line, index) => {
+        if (line.startsWith('# ')) {
+            return <h1 key={index} className="text-3xl font-bold text-gray-900 mb-4 mt-6">{line.substring(2)}</h1>;
+        }
+        if (line.startsWith('## ')) {
+            return <h2 key={index} className="text-2xl font-semibold text-gray-800 mb-3 mt-5">{line.substring(3)}</h2>;
+        }
+        if (line.startsWith('### ')) {
+            return <h3 key={index} className="text-xl font-medium text-gray-700 mb-2 mt-4">{line.substring(4)}</h3>;
+        }
+        
+        if (line.startsWith('- ') || line.startsWith('* ')) {
+            return (
+            <li key={index} className="text-gray-700 mb-1 ml-4">
+                <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                {line.substring(2)}
+            </li>
+            );
+        }
+        
+        if (line.trim() === '') {
+            return <br key={index} />;
+        }
+        
+        return <p key={index} className="text-gray-700 mb-3">{line}</p>;
+        });
+    };
+
+    const renderRoundContent = () => {
+    const currentRound = applicationRounds.find(round => round.id === selectedRound);
+    
+        // Job Details and Application Overview (Round 0 or separate tab)
+        if (selectedRound === 0) {
             return (
                 <div className="space-y-6">
                     {/* Application Status Overview */}
@@ -122,19 +310,20 @@ export default function CandidateJobDetailsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="text-center">
                                 <div className="text-3xl font-bold text-blue-600">
-                                    {applicationData.roundNumber || 1}
+                                    {applicationRounds.length - 1}
                                 </div>
-                                <div className="text-sm text-gray-600">Current Round</div>
+                                <div className="text-sm text-gray-600">Total Round</div>
                             </div>
                             <div className="text-center">
                                 <div className={`text-3xl font-bold capitalize ${
-                                    applicationData.status === 'selected' ? 'text-green-600' :
-                                    applicationData.status === 'rejected' ? 'text-red-600' :
-                                    'text-yellow-600'
-                                }`}>
-                                    {applicationData.status || 'Pending'}
+                                    getOverallApplicationStatus() === "selected" ? "text-green-600" :
+                                    getOverallApplicationStatus() === "rejected" ? "text-red-600" :
+                                    getOverallApplicationStatus() === "in-progress" ? "text-blue-600" :
+                                    "text-yellow-600"
+                                    }`}>
+                                    {getOverallApplicationStatus().charAt(0).toUpperCase() + getOverallApplicationStatus().slice(1)}
                                 </div>
-                                <div className="text-sm text-gray-600">Application Status</div>
+                                <div className="text-sm text-gray-600">Overall Application Status</div>
                             </div>
                             <div className="text-center">
                                 <div className="text-3xl font-bold text-purple-600">
@@ -166,7 +355,7 @@ export default function CandidateJobDetailsPage() {
                                     <p className="text-gray-800 text-lg">
                                         {jobData.companyWebsite ? (
                                             <a href={jobData.companyWebsite} target="_blank" rel="noopener noreferrer" 
-                                               className="text-blue-600 hover:underline">
+                                            className="text-blue-600 hover:underline">
                                                 {jobData.companyWebsite}
                                             </a>
                                         ) : 'N/A'}
@@ -179,6 +368,17 @@ export default function CandidateJobDetailsPage() {
                                     </p>
                                 </div>
                             </div>
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                    <span className="text-gray-600 font-medium block mb-1">Social Links</span>
+                                    <p className="text-gray-800 text-lg">
+                                        {jobData.socialLinks ? (
+                                            <a href={jobData.socialLinks} target="_blank" rel="noopener noreferrer" 
+                                            className="text-blue-600 hover:underline">
+                                                {jobData.socialLinks}
+                                            </a>
+                                        ) : 'N/A'}
+                                    </p>
+                                </div>
                         </div>
                     </div>
                     
@@ -187,7 +387,7 @@ export default function CandidateJobDetailsPage() {
                         <h4 className="text-xl font-semibold text-gray-800 mb-4">Job Description</h4>
                         <div className="bg-white border border-gray-200 rounded-lg p-6">
                             <div className="text-gray-700 whitespace-pre-line leading-relaxed">
-                                {jobData.aboutJob}
+                                {renderMarkdown(jobData?.aboutJob || "")}
                             </div>
                         </div>
                     </div>
@@ -211,20 +411,6 @@ export default function CandidateJobDetailsPage() {
                                         {new Date(applicationData.submittedAt).toLocaleString()}
                                     </span>
                                 </div>
-                                {applicationData.reviewedAt && (
-                                    <div>
-                                        <span className="text-gray-600 font-medium">Last Reviewed: </span>
-                                        <span className="text-gray-800">
-                                            {new Date(applicationData.reviewedAt).toLocaleString()}
-                                        </span>
-                                    </div>
-                                )}
-                                {applicationData.notes && (
-                                    <div>
-                                        <span className="text-gray-600 font-medium">Notes: </span>
-                                        <p className="text-gray-800 mt-1">{applicationData.notes}</p>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </div>
@@ -232,13 +418,14 @@ export default function CandidateJobDetailsPage() {
             );
         }
         
+        // Interview Rounds (Round 1 onwards)
         return (
             <div className="space-y-6">
                 <div>
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">{currentRound?.title}</h3>
                     <div className="flex items-center space-x-4 mb-6">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBgColor(currentRound?.status)}`}>
-                            {currentRound?.status?.replace('-', ' ').toUpperCase()}
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBgColor(getRoundStatus(selectedRound))}`}>
+                            {getRoundStatus(selectedRound)?.replace('-', ' ').toUpperCase()}
                         </span>
                         <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
                             {currentRound?.duration}
@@ -254,44 +441,9 @@ export default function CandidateJobDetailsPage() {
                         {currentRound?.description}
                     </p>
                     
-                    {selectedRound === 2 && (
-                        <div className="space-y-4">
-                            <h5 className="font-semibold text-gray-800">Preparation Tips:</h5>
-                            <ul className="list-disc list-inside space-y-2 text-gray-700">
-                                <li>Review your resume and be ready to discuss your experience</li>
-                                <li>Research the company and role thoroughly</li>
-                                <li>Prepare questions about the team and company culture</li>
-                                <li>Ensure good internet connection for video call</li>
-                            </ul>
-                        </div>
-                    )}
-                    
-                    {selectedRound === 3 && (
-                        <div className="space-y-4">
-                            <h5 className="font-semibold text-gray-800">Assessment areas:</h5>
-                            <ul className="list-disc list-inside space-y-2 text-gray-700">
-                                <li>Technical skills relevant to the role</li>
-                                <li>Problem-solving and analytical thinking</li>
-                                <li>Coding best practices and clean code</li>
-                                <li>System design concepts</li>
-                                <li>Technology stack knowledge</li>
-                            </ul>
-                        </div>
-                    )}
-                </div>
-                
-                <div className={`border-l-4 p-4 rounded-r-lg bg-yellow-50 border-yellow-400`}>
-                    <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                            <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                        </div>
-                        <div className="ml-3">
-                            <p className="text-yellow-700">
-                                <strong>Status:</strong> This round is currently pending. You will be notified when it's scheduled.
-                            </p>
-                        </div>
+                    <div className="space-y-4">
+                        <h5 className="font-semibold text-gray-800">Communication Status</h5>
+                        {renderEmailContent(selectedRound)}
                     </div>
                 </div>
             </div>
@@ -299,56 +451,38 @@ export default function CandidateJobDetailsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <Link href="/joblists" className="flex items-center space-x-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md transition-colors duration-200">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                        <span>Back to Applied Jobs</span>
-                    </Link>
-
-                    <div className="flex items-center space-x-2 bg-black hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors duration-200">
-                        <h1 className="text-xl font-semibold">{jobData.jobTitle}</h1>
-                    </div>
-                </div>
-
+        <div className="flex flex-col min-h-screen bg-gray-50 max-w-full">
+            < Navbar />
+            <div className="max-w-full px-9 py-3 flex-1">
                 {/* Main Content */}
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                    
                     {/* Left Sidebar - Application Progress */}
                     <div className="lg:col-span-1">
-                        <div className="bg-gray-800 rounded-lg p-6 shadow-lg sticky top-8">
-                            <h2 className="text-white text-lg font-semibold mb-6">{jobData.jobTitle}</h2>
-                            
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center space-x-2 bg-black hover:bg-gray-600 text-white px-9 py-2 rounded-md transition-colors duration-200">
+                                <h1 className="text-xl font-semibold">{jobData.jobTitle}</h1>
+                            </div>
+                        </div>
+                
+                        <div className="bg-gray-800 rounded-lg p-6 shadow-lg sticky top-8">                        
                             <div className="space-y-2">
-                                {applicationRounds.map((round, index) => (
+                                {applicationRounds.map((round) => (
                                     <div key={round.id} className="relative">
                                         <button 
                                             onClick={() => setSelectedRound(round.id)}
                                             className={`w-full text-left rounded-lg px-4 py-3 transition-all duration-200 ${
-                                                selectedRound === round.id 
-                                                    ? 'bg-black text-white shadow-md transform scale-105' 
-                                                    : 'bg-gray-700 hover:bg-gray-600 text-white hover:transform hover:scale-102'
-                                            }`}
+                                                getButtonStatusColor(round.id, selectedRound === round.id)}`}
                                         >
-                                            <div className="font-medium">{round.name}</div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="font-medium">{round.name}</div>
+                                            </div>
                                         </button>
                                         
-                                        <div className={`text-center mt-2 text-sm font-semibold ${getStatusColor(round.status)}`}>
-                                            {round.status.replace('-', ' ').toUpperCase()}
-                                        </div>
-                                        
                                         {/* Connection line */}
-                                        {index < applicationRounds.length - 1 && (
-                                            <div className="flex justify-center my-3">
-                                                <div className={`w-0.5 h-6 ${
-                                                    round.status === 'completed' ? 'bg-green-400' : 'bg-gray-600'
-                                                }`}></div>
-                                            </div>
-                                        )}
+                                        <div className="flex justify-center my-3">
+                                            <div className="w-0.5 h-1"></div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -360,7 +494,9 @@ export default function CandidateJobDetailsPage() {
                         <div className="bg-white rounded-lg shadow-lg">
                             {/* Tab Header */}
                             <div className="bg-gray-800 text-white rounded-t-lg px-6 py-4">
-                                <h2 className="text-xl font-semibold">All about the jobs</h2>
+                                <h2 className="text-xl font-semibold">
+                                    {selectedRound === 0 ? "Job details & Application" : "Interview Rounds"}
+                                </h2>
                             </div>
                             
                             {/* Content Area */}
@@ -371,6 +507,8 @@ export default function CandidateJobDetailsPage() {
                     </div>
                 </div>
             </div>
+
+            < FooterLogin />
         </div>
     );
 }
