@@ -24,10 +24,10 @@ export default function Footer() {
         <div className="md:px-36">
           <h3 className="font-semibold mb-3">Services</h3>
           <ul className="space-y-2 text-sm text-gray-600">
-            <li><Link href="#">About</Link></li>
-            <li><Link href="#">Features</Link></li>
-            <li><Link href="#">Works</Link></li>
-            <li><Link href="#">Career</Link></li>
+            <li><Link href="about">About</Link></li>
+            <li><Link href="features">Features</Link></li>
+            <li><Link href="works">Works</Link></li>
+            <li><Link href="career">Career</Link></li>
           </ul>
         </div>
 
