@@ -15,6 +15,7 @@ interface Job {
   companyWebsite?: string;
   socialLinks?: { platform: string; url: string; id: number }[];
   aboutJob: string;
+  title: string,
   createdAt?: string;
   closeDate?: string;
   isClosed?: boolean;
@@ -51,6 +52,7 @@ const JobDetailsHireManager: React.FC = () => {
   const jobId = params?.id as string;
   const [job, setJob] = useState<Job | null>(null);
   const [jobRounds, setJobRounds] = useState<JobRounds | null>(null);
+  const [roundTitle, setRoundTitle] = useState<Job | null>(null);
   const [candidateResponses, setCandidateResponses] = useState<FormResponse[]>([]);
   const [openCandidateId, setOpenCandidateId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ const JobDetailsHireManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('Job details');
   const [jobCloseDate, setJobCloseDate] = useState<string>("");
   const [jobCloseTime, setJobCloseTime] = useState<string>("");
-  const [isJobClosed, setIsJobClosed] = useState<boolean>(false);
+  const [isJobClosed, setIsJobClosed] = useState<boolean>(false);  
 
   // Fetch job details, rounds, and candidate responses
   useEffect(() => {
@@ -269,16 +271,16 @@ const JobDetailsHireManager: React.FC = () => {
           if(candidate._id === responseId) {
             const updatedCandidate = { ...candidate };
 
-            if(!updatedCandidate.roundStatuses) {
+            if(!updatedCandidate.roundStatuses || !Array.isArray(updatedCandidate.roundStatuses)) {
               updatedCandidate.roundStatuses = [];
             }
             const existingRoundIndex = updatedCandidate.roundStatuses.findIndex(rs => rs.round === round);
 
             if(existingRoundIndex >= 0) {
               updatedCandidate.roundStatuses[existingRoundIndex] = {
-                ...updatedCandidate.roundStatuses[existingRoundIndex],
+                round,
                 status,
-                notes: notes || updatedCandidate.roundStatuses[existingRoundIndex].notes
+                notes: notes || updatedCandidate.roundStatuses[existingRoundIndex].notes || " "
               };
             }
             else {
@@ -291,7 +293,7 @@ const JobDetailsHireManager: React.FC = () => {
 
             if(round === 1) {
               updatedCandidate.status = status;
-              updatedCandidate.notes = notes || candidate.notes;
+              if(notes) updatedCandidate.notes = notes;
             }
 
             return updatedCandidate;
@@ -596,35 +598,8 @@ const JobDetailsHireManager: React.FC = () => {
               </div>
             </div>
 
-            {/* Show selected rounds info or no rounds message */}
-            {jobRounds && jobRounds.selectedRounds && Array.isArray(jobRounds.selectedRounds) && jobRounds.selectedRounds.length > 0 ? (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">Interview Process</h4>
-                <p className="text-gray-600 mb-2">
-                  This job has <strong>{jobRounds.selectedRounds.length}</strong> interview rounds:
-                </p>
-                <ul className="list-disc list-inside text-gray-700">
-                  {jobRounds.selectedRounds.map((round, index) => (
-                    <li key={index}>{round}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <h4 className="text-lg font-semibold text-yellow-800 mb-2">Interview Process</h4>
-                <p className="text-yellow-700">
-                  No interview rounds have been set up for this job yet. Please configure the hiring process first.
-                </p>
-                <Link 
-                  href={`/rounds?jobId=${jobId}&rounds=3`}
-                  className="inline-block mt-2 bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition-colors"
-                >
-                  Configure Rounds
-                </Link>
-              </div>
-            )}
-
             {/* Application link */}
+            <div className="border-t mt-3"></div>
             <div className="mt-6 p-4 bg-gray-50 border border-black rounded-lg">
               <h4 className="text-lg font-semibold text-black mb-2">Application Link</h4>
               <p className="text-black mb-3">
@@ -650,6 +625,7 @@ const JobDetailsHireManager: React.FC = () => {
               </div>
             </div>
 
+            {/* job closed  */}
             <div className="mt-6 p-4 bg-gray-50 border border-black rounded-lg">
               <h4 className="text-lg font-semibold text-black mb-2">Job Status</h4>
               

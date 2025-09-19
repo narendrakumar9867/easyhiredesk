@@ -58,75 +58,75 @@ const RoundPage = () => {
   }, []);
 
   // Updated handleSubmit function for RoundPage.js
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  if (!jobId || !rounds) {
-    alert('Missing job or rounds information');
-    return;
-  }
-
-  try {
-    // Save current round data first
-    saveCurrentRoundData();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
-    // Get updated round data including current round
-    const updatedAllRoundsData = { ...allRoundsData };
-    const currentData = {
-      title: roundTitles[currentRound] || `Round ${currentRound}`,
-      formFields: currentRound === 1 ? formFields : [],
-      selectedEmail,
-      rejectionEmail
-    };
-    updatedAllRoundsData[currentRound] = currentData;
-    
-    // Submit each round's details
-    for (let roundNum = 1; roundNum <= totalRounds; roundNum++) {
-      const roundData = updatedAllRoundsData[roundNum];
-      
-      if (!roundData) {
-        alert(`Please configure Round ${roundNum} before submitting`);
-        return;
-      }
-
-      // Prepare payload with correct structure
-      const payload = {
-        jobId: jobId,
-        roundNumber: roundNum,
-        title: roundData.title || `Round ${roundNum}`,
-        formFields: roundData.formFields.map(field => ({
-          label: field.label,
-          fieldType: field.type,
-          placeholder: field.placeholder || '',
-          required: field.required || false,
-          options: ['select', 'radio', 'checkbox'].includes(field.type) 
-            ? (field.options || ['Option 1', 'Option 2']) 
-            : undefined
-        })),
-        selectedEmail: parseEmail(roundData.selectedEmail),
-        nonSelectedEmail: parseEmail(roundData.rejectionEmail)
-      };
-
-      console.log(`Submitting Round ${roundNum} with payload:`, payload);
-
-      const res = await axios.post("http://localhost:5000/api/round/details", payload, {
-        headers: {
-          "Content-Type": "application/json",
-        }
-      });
-      
-      console.log(`Round ${roundNum} saved:`, res.data);
+    if (!jobId || !rounds) {
+      alert('Missing job or rounds information');
+      return;
     }
 
-    alert("All rounds configured successfully!");
-    router.push("/");
-    
-  } catch (error) {
-    console.error("Error submitting rounds:", error);
-    console.error("Error details:", error.response?.data);
-    alert(`Error submitting rounds: ${error.response?.data?.message || error.message}`);
-  }
-};
+    try {
+      // Save current round data first
+      saveCurrentRoundData();
+      
+      // Get updated round data including current round
+      const updatedAllRoundsData = { ...allRoundsData };
+      const currentData = {
+        title: roundTitles[currentRound] || `Round ${currentRound}`,
+        formFields: currentRound === 1 ? formFields : [],
+        selectedEmail,
+        rejectionEmail
+      };
+      updatedAllRoundsData[currentRound] = currentData;
+      
+      // Submit each round's details
+      for (let roundNum = 1; roundNum <= totalRounds; roundNum++) {
+        const roundData = updatedAllRoundsData[roundNum];
+        
+        if (!roundData) {
+          alert(`Please configure Round ${roundNum} before submitting`);
+          return;
+        }
+
+        // Prepare payload with correct structure
+        const payload = {
+          jobId: jobId,
+          roundNumber: roundNum,
+          title: roundData.title || `Round ${roundNum}`,
+          formFields: roundData.formFields.map(field => ({
+            label: field.label,
+            fieldType: field.type,
+            placeholder: field.placeholder || '',
+            required: field.required || false,
+            options: ['select', 'radio', 'checkbox'].includes(field.type) 
+              ? (field.options || ['Option 1', 'Option 2']) 
+              : undefined
+          })),
+          selectedEmail: parseEmail(roundData.selectedEmail),
+          nonSelectedEmail: parseEmail(roundData.rejectionEmail)
+        };
+
+        console.log(`Submitting Round ${roundNum} with payload:`, payload);
+
+        const res = await axios.post("http://localhost:5000/api/round/details", payload, {
+          headers: {
+            "Content-Type": "application/json",
+          }
+        });
+        
+        console.log(`Round ${roundNum} saved:`, res.data);
+      }
+
+      alert("All rounds configured successfully!");
+      router.push("/");
+      
+    } catch (error) {
+      console.error("Error submitting rounds:", error);
+      console.error("Error details:", error.response?.data);
+      alert(`Error submitting rounds: ${error.response?.data?.message || error.message}`);
+    }
+  };
 
   const saveCurrentRoundData = useCallback(() => {
     const currentRoundData = {
