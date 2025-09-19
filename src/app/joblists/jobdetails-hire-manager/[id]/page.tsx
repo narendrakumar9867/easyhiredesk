@@ -16,6 +16,8 @@ interface Job {
   socialLinks?: { platform: string; url: string; id: number }[];
   aboutJob: string;
   createdAt?: string;
+  closeDate?: string;
+  isClosed?: boolean;
 }
 
 interface FormResponse {
@@ -55,6 +57,9 @@ const JobDetailsHireManager: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null); // Track which candidate is being updated
   const [activeTab, setActiveTab] = useState<string>('Job details');
+  const [jobCloseDate, setJobCloseDate] = useState<string>("");
+  const [jobCloseTime, setJobCloseTime] = useState<string>("");
+  const [isJobClosed, setIsJobClosed] = useState<boolean>(false);
 
   // Fetch job details, rounds, and candidate responses
   useEffect(() => {
@@ -113,6 +118,121 @@ const JobDetailsHireManager: React.FC = () => {
     fetchJobDetails();
   }, [jobId, token]);
 
+  useEffect(() => {
+    if(job?.closeDate) {
+      const closeDateTime = new Date(job.closeDate);
+      const now = new Date();
+
+      if(now > closeDateTime) {
+        setIsJobClosed(true);
+      }
+      else {
+        setIsJobClosed(job.isClosed || false);
+      }
+
+      if(job.closeDate) {
+        const closeDate = new Date(job.closeDate);
+        setJobCloseDate(closeDate.toISOString().split("T")[0]);
+        setJobCloseTime(closeDate.toISOString().split("T")[1].slice(0, 5));
+      }
+    }
+    else {
+      setIsJobClosed(job?.isClosed || false);
+    }
+  }, [job]);
+
+  const handleCloseJob = async () => {
+    if(!jobCloseDate || !jobCloseTime) {
+      alert("please select both date and time to close the job.");
+      return;
+    }
+
+    try {
+      const closeDateTime = new Date(`${jobCloseDate}T${jobCloseTime}`);
+      const now = new Date();
+
+      if(closeDateTime <= now) {
+        alert("please select a future date and time.");
+        return;
+      }
+
+      const response = await axios.put(
+        `http://localhost:5000/api/jobs/${jobId}/close`,
+        {
+          closeDate: closeDateTime.toISOString(),
+          isClosed: false
+        },
+        { headers: { Authorization: `Bearer ${token}`}}
+      );
+
+      if(response.data.success) {
+        alert(`Job will automatically close on ${closeDateTime.toISOString()}`);
+        setJob(prev => prev ? {
+          ...prev,
+          closeDate: closeDateTime.toISOString(),
+          isClosed: false
+        } : null);
+      }
+    } catch (error: any) {
+      console.error("error scheduling job close: ", error);
+      alert("Failed to schedule job closure: " + (error.response?.data?.message || error.message));
+    }
+  };
+
+  // function to immediately close the job:
+  const handleImmediateClose = async () => {
+    console.log("Token in handleImmedidateClose:", token);
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/jobs/${jobId}/close`,
+        { 
+          isClosed: true,
+          closeDate: new Date().toISOString()
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        alert('Job closed successfully!');
+        setIsJobClosed(true);
+        setJob(prev => prev ? {
+          ...prev,
+          isClosed: true,
+          closeDate: new Date().toISOString()
+        } : null);
+      }
+    } catch (error: any) {
+      console.error('Error closing job:', error);
+      alert('Failed to close job: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleReopenJob = async () => {
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/jobs/${jobId}/reopen`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        alert('Job reopened successfully!');
+        setIsJobClosed(false);
+        setJob(prev => prev ? {
+          ...prev,
+          isClosed: false,
+          closeDate: null
+        } : null);
+        // Clear the form fields
+        setJobCloseDate('');
+        setJobCloseTime('');
+      }
+    } catch (error: any) {
+      console.error('Error reopening job:', error);
+      alert('Failed to reopen job: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
   const viewUploadedFile = async (responseId: string, fieldLabel: string) => {
     try {
       const response = await axios.get(`http://localhost:5000/api/form/file/${responseId}/${fieldLabel}`, {
@@ -137,7 +257,7 @@ const JobDetailsHireManager: React.FC = () => {
       console.log(`Updating candidate ${responseId} status to ${status} for round ${round}`);
       const response = await axios.put(
         `http://localhost:5000/api/form/update-status/${responseId}`,
-        { status, notes: notes || '', round },
+        { status, notes: notes || '', round, hireManagerEmail: "botcoder89@gmail.com" },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -180,9 +300,14 @@ const JobDetailsHireManager: React.FC = () => {
         })
       );
       
-      // Show success message
+      // Show success message with email status
       const candidateName = candidateResponses.find(c => c._id === responseId)?.candidateName || 'Candidate';
-      alert(`${candidateName} has been ${status}`);
+      
+      if (response.data.emailSent) {
+        alert(`${candidateName} has been ${status}. Email sent successfully.`);
+      } else {
+        alert(`${candidateName} has been ${status}. Status updated but email failed to send: ${response.data.emailError || 'Unknown error'}`);
+      }
       
     } catch (error: any) {
       console.error("Error updating candidate status:", error);
@@ -383,13 +508,6 @@ const JobDetailsHireManager: React.FC = () => {
   };
 
   const renderTabContent = () => {
-  // Helper function to get current round from tab
-  const getCurrentRoundFromTab = (tab: string): number => {
-    if (tab === 'Job details') return 1;
-    const match = tab.match(/Round (\d+)/);
-    return match ? parseInt(match[1]) : 1;
-  };
-
   // Helper function to get round-specific status
   const getRoundStatus = (candidate: FormResponse, round: number): string => {
     if (round === 1) return candidate.status; // Use main status for Round 1
@@ -531,6 +649,94 @@ const JobDetailsHireManager: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            <div className="mt-6 p-4 bg-gray-50 border border-black rounded-lg">
+              <h4 className="text-lg font-semibold text-black mb-2">Job Status</h4>
+              
+              {isJobClosed ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                      <p className="text-red-800 font-semibold">This job is closed</p>
+                    </div>
+                  </div>
+                  <p className="text-red-600 text-sm mb-4">
+                    {job?.closeDate ? 
+                      `Closed on: ${new Date(job.closeDate).toLocaleString()}` : 
+                      'This job has been manually closed.'
+                    }
+                  </p>
+                  <button
+                    onClick={handleReopenJob}
+                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                  >
+                    Reopen Job
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <p className='text-black mb-3'>
+                    Schedule when this job should automatically close or close it immediately.
+                  </p>
+                  
+                  {/* Schedule Close Section */}
+                  <div className="mb-4 p-3 bg-white rounded-lg border">
+                    <h5 className="font-medium text-gray-800 mb-2">Schedule Automatic Close</h5>
+                    <div className='flex items-center space-x-2 mb-3'>
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Close Date:</label>
+                        <input
+                          type="date"
+                          value={jobCloseDate}
+                          onChange={(e) => setJobCloseDate(e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Close Time:</label>
+                        <input
+                          type="time"
+                          value={jobCloseTime}
+                          onChange={(e) => setJobCloseTime(e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div className="pt-6">
+                        <button
+                          onClick={handleCloseJob}
+                          className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                        >
+                          Schedule Close
+                        </button>
+                      </div>
+                    </div>
+                    {job?.closeDate && !isJobClosed && (
+                      <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border-l-4 border-orange-400">
+                        Scheduled to close: {new Date(job.closeDate).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Immediate Close Section */}
+                  <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                    <h5 className="font-medium text-red-800 mb-2">Close Immediately</h5>
+                    <div className='flex items-center justify-between'>
+                      <p className="text-red-600 text-sm">
+                        Close this job right now. This action cannot be undone.
+                      </p>
+                      <button
+                        onClick={handleImmediateClose}
+                        className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                      >
+                        Close Now
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         );
       default:
@@ -563,7 +769,7 @@ const JobDetailsHireManager: React.FC = () => {
                       {candidatesForRound.length}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {roundNumber === 1 ? 'Total Applications' : 'Qualified Candidates'}
+                      {roundNumber === 1 ? 'Total Applications' : `Qualified Candidates`}
                     </div>
                   </div>
                 </div>
@@ -674,20 +880,6 @@ const JobDetailsHireManager: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-gray-50 max-w-full">
       < Navbar />
       <div className="max-w-full px-9 py-3 flex-1">
-        {/* Back Button */}
-        <div className="flex items-center justify-between mb-8">
-          <Link href="/joblists" className="flex items-center space-x-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md transition-colors duration-200">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            <span>Back</span>
-          </Link>
-          
-          <h1 className="flex items-center space-x-2 bg-black hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors duration-200">
-            <div className="font-semibold">Job Management</div>
-          </h1>
-        </div>
-
         {/* Job Title Header */}
         <div className="bg-white border border-black rounded-lg p-6 mb-8">
           <h1 className="text-black text-2xl font-bold text-center">{job.jobTitle}</h1>

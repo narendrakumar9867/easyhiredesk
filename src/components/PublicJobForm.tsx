@@ -6,6 +6,12 @@ import LoginPage from '../app/(auth)/Login';
 import PublicFormSignUp from '../app/(auth)/SignUp';
 import { useAuth } from "@/src/hooks/useAuth";
 
+interface FormConfig {
+  job: JobInfo;
+  formFields: FormField[];
+  roundTitle: string;
+}
+
 interface FormField {
   label: string;
   fieldType: string;
@@ -18,12 +24,9 @@ interface JobInfo {
   title: string;
   company: string;
   location: string;
-}
-
-interface FormConfig {
-  job: JobInfo;
-  formFields: FormField[];
-  roundTitle: string;
+  companyWebsite: string;
+  socialLinks: Array<{platform: string; url: string}>;
+  aboutJob: string;
 }
 
 const PublicJobApplicationForm = () => {
@@ -60,6 +63,22 @@ const PublicJobApplicationForm = () => {
         console.log("Form config response:", response.data);
         
         if (response.data.success) {
+          // Check if job is closed
+          if (response.data.data.job.isClosed) {
+            setError("This job application is no longer accepting submissions.");
+            return;
+          }
+          
+          // Check if job is expired
+          if (response.data.data.job.closeDate) {
+            const closeDate = new Date(response.data.data.job.closeDate);
+            const now = new Date();
+            if (now > closeDate) {
+              setError("This job application deadline has passed.");
+              return;
+            }
+          }
+          
           setFormConfig(response.data.data);
           // Initialize form data with empty values
           const initialData: Record<string, any> = {};
@@ -117,102 +136,102 @@ const PublicJobApplicationForm = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  if (!authUser) {
-    setShowLogin(true);
-    return;
-  }
-
-  if (!formConfig) return;
-
-  console.log("Form data before submission:", formData);
-  console.log("Form config fields:", formConfig.formFields);
-
-  // Validate required fields
-  for (const field of formConfig.formFields) {
-    const fieldValue = formData[field.label];
-    console.log(`Checking field ${field.label}:`, fieldValue, "Required:", field.required);
+    e.preventDefault();
     
-    if (field.required && (!fieldValue || fieldValue === '' || (Array.isArray(fieldValue) && fieldValue.length === 0))) {
-      alert(`${field.label} is required`);
+    if (!authUser) {
+      setShowLogin(true);
       return;
     }
-  }
 
-  try {
-    setSubmitting(true);
-    
-    // Create FormData for file uploads
-    const formDataToSend = new FormData();
-    
-    // Add basic form data
-    formDataToSend.append('jobId', jobId);
-    formDataToSend.append('candidateEmail', authUser.email);
-    formDataToSend.append('candidateName', formData['Full Name'] || authUser.email);
-    
-    // Prepare responses with proper value handling
-    const responses = formConfig.formFields.map((field, index) => {
+    if (!formConfig) return;
+
+    console.log("Form data before submission:", formData);
+    console.log("Form config fields:", formConfig.formFields);
+
+    // Validate required fields
+    for (const field of formConfig.formFields) {
       const fieldValue = formData[field.label];
+      console.log(`Checking field ${field.label}:`, fieldValue, "Required:", field.required);
       
-      console.log(`Processing field ${field.label} (${field.fieldType}):`, fieldValue);
-      
-      if (field.fieldType === 'file') {
-        // For file fields, append the file separately
-        if (fieldValue) {
-          formDataToSend.append(`file_${index}`, fieldValue);
-        }
-        
-        return {
-          fieldLabel: field.label,
-          fieldType: field.fieldType,
-          value: fieldValue ? fieldValue.name : null
-        };
-      } else if (field.fieldType === 'checkbox') {
-        // Handle checkbox arrays
-        return {
-          fieldLabel: field.label,
-          fieldType: field.fieldType,
-          value: Array.isArray(fieldValue) ? fieldValue : []
-        };
-      } else {
-        // Handle all other field types
-        return {
-          fieldLabel: field.label,
-          fieldType: field.fieldType,
-          value: fieldValue || '' // Ensure we send empty string instead of undefined/null
-        };
+      if (field.required && (!fieldValue || fieldValue === '' || (Array.isArray(fieldValue) && fieldValue.length === 0))) {
+        alert(`${field.label} is required`);
+        return;
       }
-    });
-
-    console.log("Prepared responses:", responses);
-
-    // Add responses as JSON string
-    formDataToSend.append('responses', JSON.stringify(responses));
-    const response = await axios.post(
-      'http://localhost:5000/api/form/submit',
-      formDataToSend,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        }
-      }
-    );
-
-    console.log("Submission response:", response.data);
-
-    if (response.data) {
-      setApplicationSubmitted(true);
     }
-    
-  } catch (error: any) {
-    console.error("Error submitting form:", error);
-    console.error("Error response:", error.response?.data);
-    alert(error.response?.data?.message || "Failed to submit application");
-  } finally {
-    setSubmitting(false);
-  }
-};
+
+    try {
+      setSubmitting(true);
+      
+      // Create FormData for file uploads
+      const formDataToSend = new FormData();
+      
+      // Add basic form data
+      formDataToSend.append('jobId', jobId);
+      formDataToSend.append('candidateEmail', authUser.email);
+      formDataToSend.append('candidateName', formData['Full Name'] || authUser.email);
+      
+      // Prepare responses with proper value handling
+      const responses = formConfig.formFields.map((field, index) => {
+        const fieldValue = formData[field.label];
+        
+        console.log(`Processing field ${field.label} (${field.fieldType}):`, fieldValue);
+        
+        if (field.fieldType === 'file') {
+          // For file fields, append the file separately
+          if (fieldValue) {
+            formDataToSend.append(`file_${index}`, fieldValue);
+          }
+          
+          return {
+            fieldLabel: field.label,
+            fieldType: field.fieldType,
+            value: fieldValue ? fieldValue.name : null
+          };
+        } else if (field.fieldType === 'checkbox') {
+          // Handle checkbox arrays
+          return {
+            fieldLabel: field.label,
+            fieldType: field.fieldType,
+            value: Array.isArray(fieldValue) ? fieldValue : []
+          };
+        } else {
+          // Handle all other field types
+          return {
+            fieldLabel: field.label,
+            fieldType: field.fieldType,
+            value: fieldValue || '' // Ensure we send empty string instead of undefined/null
+          };
+        }
+      });
+
+      console.log("Prepared responses:", responses);
+
+      // Add responses as JSON string
+      formDataToSend.append('responses', JSON.stringify(responses));
+      const response = await axios.post(
+        'http://localhost:5000/api/form/submit',
+        formDataToSend,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+        }
+      );
+
+      console.log("Submission response:", response.data);
+
+      if (response.data) {
+        setApplicationSubmitted(true);
+      }
+      
+    } catch (error: any) {
+      console.error("Error submitting form:", error);
+      console.error("Error response:", error.response?.data);
+      alert(error.response?.data?.message || "Failed to submit application");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleLoginToSignup = () => {
     setShowLogin(false);
@@ -368,7 +387,7 @@ const PublicJobApplicationForm = () => {
             We'll contact you if you're selected for the next round.
           </p>
           <button
-            onClick={() => router.push('/candidate/applications')}
+            onClick={() => router.push('/')}
             className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
           >
             View My Applications
@@ -394,16 +413,10 @@ const PublicJobApplicationForm = () => {
           </p>
           <div className="space-y-3">
             <button
-              onClick={() => router.push('/candidate/applications')}
+              onClick={() => router.push(`/`)}
               className="w-full bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
             >
               View My Applications
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="w-full bg-gray-100 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-200 transition-colors"
-            >
-              Back to Jobs
             </button>
           </div>
         </div>
@@ -421,25 +434,68 @@ const PublicJobApplicationForm = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-2xl mx-auto px-4">
+      <div className="max-w-3xl mx-auto px-4">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {formConfig.job.title}
           </h1>
-          <p className="text-gray-600 mb-1">{formConfig.job.company}</p>
-          <p className="text-gray-500 mb-4">{formConfig.job.location}</p>
           
+          {/* Job Info Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="space-y-3">
+              <div>
+                <span className="text-gray-600 font-medium text-sm">Company:</span>
+                <p className="text-gray-800">{formConfig.job.company}</p>
+              </div>
+              <div>
+                <span className="text-gray-600 font-medium text-sm">Location:</span>
+                <p className="text-gray-800">{formConfig.job.location}</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {formConfig.job.companyWebsite && (
+                <div>
+                  <span className="text-gray-600 font-medium text-sm">Website:</span>
+                  <p className="text-gray-800">
+                    <a href={formConfig.job.companyWebsite} target="_blank" rel="noopener noreferrer" 
+                       className="text-blue-600 hover:underline">
+                      {formConfig.job.companyWebsite}
+                    </a>
+                  </p>
+                </div>
+              )}
+              {formConfig.job.socialLinks && Array.isArray(formConfig.job.socialLinks) && formConfig.job.socialLinks.length > 0 && (
+                <div>
+                  <span className="text-gray-600 font-medium text-sm">Social Links:</span>
+                  <div className="text-gray-800">
+                    {formConfig.job.socialLinks.map((link, index) => (
+                      <div key={index}>
+                        <a href={link.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-blue-600 hover:underline capitalize">
+                          {link.platform}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
           {/* Job Description */}
-          {/* {formConfig.job.description && (
+          {formConfig.job.aboutJob && (
             <div className="mb-4 pb-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-800 mb-3">Job Description</h3>
               <div className="text-gray-700 text-sm leading-relaxed bg-gray-50 p-4 rounded-lg">
-                {renderJobDescription(formConfig.job.description)}
+                <div className="whitespace-pre-line">
+                  {formConfig.job.aboutJob}
+                </div>
               </div>
             </div>
-          )} */}
-          
+          )}
+            
           <div className="pt-4 border-t border-gray-200">
             <h2 className="text-xl font-semibold text-gray-800">
               {formConfig.roundTitle}
