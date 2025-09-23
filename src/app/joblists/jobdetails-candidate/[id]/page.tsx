@@ -34,9 +34,8 @@ export default function CandidateJobDetailsPage() {
                 const response = await axiosInstance.get(`/candidate/application/${applicationId}`, config);
                 setApplicationData(response.data.application);
 
-                // Line 26 ke baad add karo for debugging:
-console.log('Application data received:', response.data.application);
-console.log('Email history:', response.data.application.emailHistory);
+                console.log('Application data received:', response.data.application);
+                console.log('Email history:', response.data.application.emailHistory);
 
                 if(response.data.application && response.data.application.jobId && response.data.application.jobId._id) {
                     try {
@@ -44,7 +43,7 @@ console.log('Email history:', response.data.application.emailHistory);
                         if(roundsResponse.data && roundsResponse.data.data) {
                             setJobRounds(roundsResponse.data.data);
                         }
-                    } catch (error) {
+                    } catch (error: any) {
                         console.log("No rounds found for this job yet:", error.response?.data?.message);
                         setJobRounds(null);
                     }
@@ -66,6 +65,9 @@ console.log('Email history:', response.data.application.emailHistory);
         };
 
         fetchApplicationData();
+
+        const interval = setInterval(fetchApplicationData, 20000);
+        return () => clearInterval(interval);
     }, [applicationId, token]);
 
     if (loading) {
@@ -105,13 +107,13 @@ console.log('Email history:', response.data.application.emailHistory);
         ];
 
         if(jobRounds && jobRounds.selectedRounds && Array.isArray(jobRounds.selectedRounds)) {
-            jobRounds.selectedRounds.forEach((roundName, index) => {
+            jobRounds.selectedRounds.forEach((roundData, index) => {
                 rounds.push({
                     id: index + 1,
                     name: `Round ${index + 1}`,
-                    title: roundName,
+                    title: roundData.title,
                     description: 'Here the mail from details share for this round',
-                    duration: 'TBD',
+                    duration: 'result date',
                     type: 'Interview Round',
                 });
             });
@@ -181,19 +183,20 @@ console.log('Email history:', response.data.application.emailHistory);
             return "completed";
         }
 
-        if(roundId === 1) {
-            if(applicationData.roundStatuses && applicationData.roundStatuses.round) {
-                return applicationData.roundStatuses.round;
+        // Check if we have roundStatuses array
+        if(applicationData.roundStatuses && Array.isArray(applicationData.roundStatuses)) {
+            const roundStatus = applicationData.roundStatuses.find(rs => rs.round === roundId);
+            if(roundStatus) {
+                return roundStatus.status;
             }
+        }
+
+        // Fallback for round 1 to main status
+        if(roundId === 1) {
             return applicationData.status || "pending";
         }
 
-        if(applicationData.roundStatuses && applicationData.roundStatuses[`round${roundId}`]) {
-            return applicationData.roundStatuses[`round${roundId}`];
-        }
-
-        const roundStatus = applicationData.roundStatuses?.find(rs => rs.round == roundId);
-        return roundStatus?.status || "pending";
+        return "pending";
     };
 
     const getEmailForRoundAndStatus = (roundId, status) => {
@@ -422,7 +425,7 @@ console.log('Email history:', response.data.application.emailHistory);
         return (
             <div className="space-y-6">
                 <div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-2">{currentRound?.title}</h3>
+                    <h3 className="text-2xl font-bold text-gray-800 mb-2">{currentRound?.roundData?.title}</h3>
                     <div className="flex items-center space-x-4 mb-6">
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBgColor(getRoundStatus(selectedRound))}`}>
                             {getRoundStatus(selectedRound)?.replace('-', ' ').toUpperCase()}
@@ -491,7 +494,7 @@ console.log('Email history:', response.data.application.emailHistory);
 
                     {/* Right Content - Application Information */}
                     <div className="lg:col-span-3">
-                        <div className="bg-white rounded-lg shadow-lg">
+                        <div className="rounded-lg">
                             {/* Tab Header */}
                             <div className="bg-gray-800 text-white rounded-t-lg px-6 py-4">
                                 <h2 className="text-xl font-semibold">

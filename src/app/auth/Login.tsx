@@ -1,8 +1,9 @@
 "use client";
-
 import { useState, useCallback } from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import toast from "react-hot-toast";
 import { useAuth } from "@/src/hooks/useAuth";
+import Image from "next/image";
 
 interface FormData {
   email: string;
@@ -22,8 +23,10 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
     email: "",
     password: "",
   });
-
   const { login, isLoggingIn } = useAuth();
+  const supabase = createClientComponentClient();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
   
   const validateEmail = (email: string): boolean => {
     if(!email) {
@@ -47,6 +50,30 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
     const topLevelDomain = domainPart.substring(dotIndex + 1);
     
     return domainName.length > 0 && topLevelDomain.length > 0;
+  }
+
+  const handleGooleLogin = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      // Get the current URL without any existing query parameters
+      const currentUrl = new URL(window.location.href);
+      const cleanUrl = `${currentUrl.origin}${currentUrl.pathname}`;
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: cleanUrl
+        }
+      });
+      if(error) {
+        setError(error.message);
+      }
+    } catch {
+      setError("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const validateForm = useCallback((): boolean => {
@@ -134,6 +161,26 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
           >
             {isLoggingIn ? "Logging In..." : "Log In"}
           </button>
+
+          <p className="flex flex-col items-center">or</p>
+
+          <div className="mt-4">
+            <button
+            type="button"
+            onClick={handleGooleLogin}
+            disabled={loading}
+            className="w-full py-2 flex items-center justify-center rounded-lg border hover:bg-gray-50 disabled:opacity-50 transition-colors gap-2"
+            >
+              <Image
+                  src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                  alt="Google"
+                  width={10}
+                  height={10}
+                  className="w-5 h-5"
+              />
+              Sign In with Google
+            </button>
+          </div>
         </form>
 
         <div className="mt-4 text-center">
