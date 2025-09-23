@@ -41,6 +41,7 @@ interface AuthStore {
     isCheckingAuth: boolean;
     token: string | null;
     checkAuth: () => Promise<void>;
+    checkSupabaseAuth: () => Promise<void>; 
     signup: (data: SignUpData) => Promise<void>;
     login: (data: LoginData) => Promise<void>;
     logout: () => Promise<void>;
@@ -82,37 +83,88 @@ export const useAuth = create<AuthStore>()(
                 }
             },
 
+            checkSupabaseAuth: async () => {
+                if (typeof window === 'undefined') return;
+                
+                try {
+                    const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
+                    const supabase = createClientComponentClient();
+                    
+                    const { data: { session } } = await supabase.auth.getSession();
+                    
+                    if (session?.user) {
+                        // Convert Supabase user to your user format
+                        const user = {
+                            _id: session.user.id,
+                            email: session.user.email!,
+                            role: 'candidate',
+                        };
+                        
+                        set({ 
+                            authUser: user,
+                            token: session.access_token,
+                            isCheckingAuth: false 
+                        });
+                        
+                        localStorage.setItem("token", session.access_token);
+                        localStorage.setItem("authUser", JSON.stringify(user));
+                    } else {
+                        // No session found
+                        set({ isCheckingAuth: false });
+                    }
+                } catch (error) {
+                    console.error("Error checking Supabase auth:", error);
+                    set({ isCheckingAuth: false });
+                }
+            },
+
             checkAuth: async () => {
                 set({ isCheckingAuth: true });
                 try {
+                    // First check for existing token from your backend
                     const token = get().token || localStorage.getItem("token");
                     
-                    if (!token) {
-                        console.warn("No token found");
-                        set({ authUser: null, isCheckingAuth: false, token: null });
-                        return;
+                    if (token) {
+                        // Try to verify with your backend first
+                        try {
+                            const res = await axiosInstance.get<AuthResponse>("/auth/check", {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            });
+
+                            localStorage.setItem("authUser", JSON.stringify(res.data));
+                            set({ 
+                                authUser: res.data, 
+                                token, 
+                                isCheckingAuth: false 
+                            });
+                            return;
+                        } catch (backendError: any) {
+                            // Only log if it's not a 404 (route doesn't exist)
+                            if (backendError.response?.status !== 404) {
+                                console.log("Backend auth failed, checking Supabase...");
+                            }
+                            // Clear invalid backend token
+                            localStorage.removeItem("token");
+                            localStorage.removeItem("authUser");
+                        }
                     }
-
-                    // Verify token with backend
-                    const res = await axiosInstance.get<AuthResponse>("/auth/check", {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    });
-
-                    // Store user data in localStorage for persistence
-                    localStorage.setItem("authUser", JSON.stringify(res.data));
                     
-                    set({ 
-                        authUser: res.data, 
-                        token, 
-                        isCheckingAuth: false 
-                    });
-
+                    // Check Supabase auth
+                    await get().checkSupabaseAuth();
+                    
+                    // If no auth found anywhere, set as not authenticated
+                    if (!get().authUser) {
+                        set({ 
+                            authUser: null, 
+                            token: null, 
+                            isCheckingAuth: false 
+                        });
+                    }
+                    
                 } catch (error: any) {
                     console.error("Error checking auth:", error);
-                    
-                    // Clear all auth data on failure
                     localStorage.removeItem("token");
                     localStorage.removeItem("authUser");
                     set({ 
@@ -120,11 +172,6 @@ export const useAuth = create<AuthStore>()(
                         token: null, 
                         isCheckingAuth: false 
                     });
-
-                    // Only show error if it's not a network/server issue
-                    if (error.response?.status !== 404) {
-                        toast.error("Authentication failed. Please login again.");
-                    }
                 }
             },
 

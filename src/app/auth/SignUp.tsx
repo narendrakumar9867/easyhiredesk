@@ -2,6 +2,8 @@
 import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/src/hooks/useAuth";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import Image from "next/image";
 
 interface FormData {
   role: string;
@@ -25,6 +27,10 @@ export default function PublicFormSignUp({ isOpen, onClose, onLoginClick }: Sign
   });
 
   const { signup, isSigningUp } = useAuth();
+  const supabase = createClientComponentClient();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
 
   const validateEmail = (email: string): boolean => {
     if(!email) {
@@ -49,6 +55,32 @@ export default function PublicFormSignUp({ isOpen, onClose, onLoginClick }: Sign
     
     return domainName.length > 0 && topLevelDomain.length > 0;
   }
+
+  const handleGoogleSignup = async () => {
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const currentUrl = new URL(window.location.href);
+      const cleanUrl = `${currentUrl.origin}${currentUrl.pathname}`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: cleanUrl
+        }
+      });
+
+      if (error) {
+        setError(error.message);
+      }
+    } catch {
+      setError("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const validateForm = useCallback((): boolean => {
     if(!formData.role) {
@@ -154,6 +186,26 @@ export default function PublicFormSignUp({ isOpen, onClose, onLoginClick }: Sign
           >
             {isSigningUp ? "Creating account..." : "Create Account"}
           </button>
+
+          <p className="flex flex-col items-center">or</p>
+
+          <div className="mt-4">
+            <button
+            type="button"
+            onClick={handleGoogleSignup}
+            disabled={loading}
+            className="w-full py-2 flex items-center justify-center rounded-lg border hover:bg-gray-50 disabled:opacity-50 transition-colors gap-2"
+            >
+              <Image
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google"
+                width={10}
+                height={10}
+                className="w-5 h-5" 
+              />
+              Sign Up with Google
+            </button>
+          </div>
         </form>
 
         <div className="mt-4 text-center">

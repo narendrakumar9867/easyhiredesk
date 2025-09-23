@@ -8,8 +8,8 @@ import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { AiOutlineClose } from 'react-icons/ai';
 import { FaUser } from 'react-icons/fa';
 
-import Login from '../app/(auth)/Login';
-import Signup from '../app/(auth)/SignUp';
+import Login from '../app/auth/Login';
+import Signup from '../app/auth/SignUp';
 import { useAuth } from '@/src/hooks/useAuth';
 
 type NavItem = {
