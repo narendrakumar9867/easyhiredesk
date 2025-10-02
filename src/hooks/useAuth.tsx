@@ -248,11 +248,16 @@ export const useAuth = create<AuthStore>()(
                             Authorization: `Bearer ${token}`,
                         },
                     });
+
+                    const updatedAuthUser = {
+                        ...res.data,
+                        token: token,
+                    };
                     
                     // Update localStorage
-                    localStorage.setItem("authUser", JSON.stringify(res.data));
+                    localStorage.setItem("authUser", JSON.stringify(updatedAuthUser));
                     
-                    set({ authUser: res.data });
+                    set({ authUser: updatedAuthUser });
                     toast.success("Profile updated successfully.");
                 } catch (error: any) {
                     console.error("Error updating profile:", error);

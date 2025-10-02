@@ -16,6 +16,8 @@ interface Job {
     aboutJob: string;
     createdBy?: string;
     createdAt?: string;
+    closeDate?: string;
+    isClosed?: string;
 }
 
 interface Application {
@@ -23,7 +25,11 @@ interface Application {
     jobId: Job;
     candidateEmail: string;
     candidateName: string;
-    status: string; // 'pending', 'reviewed', 'accepted', 'rejected'
+    status: string; //  'selected', 'Pending' ,'Rejected'
+    roundStatuses?: {
+        round: number;
+        status: "pending" | "selected" | "rejected";
+    }[];
     submittedAt: string;
     responses: any[];
 }
@@ -34,6 +40,8 @@ export default function JobListsPage() {
     const [jobs, setJobs] = useState<Job[]>([]);
     const [applications, setApplications] = useState<Application[]>([]);
     const [loading, setLoading] = useState(true);
+    const [jobFilter, setJobFilter] = useState<"all" | "open" | "closed">("all");
+    const [applicationFilter, setApplicationFilter] = useState<"all" | "selected" | "pending" | "rejected" | "in-progress">("all"); 
 
     // Fetch jobs for hire managers
     useEffect(() => {
@@ -88,10 +96,15 @@ export default function JobListsPage() {
                     }
                 };
 
-                // Assuming you have an endpoint to get candidate's applications
+                // Fetch candidate's applications
                 const response = await axiosInstance.get("/jobs/my-applications", config);
                 console.log('Applications response received:', response.data);
-                setApplications(response.data.applications || []);
+                
+                if (response.data.applications && response.data.applications.length > 0) {
+                    setApplications(response.data.applications);
+                } else {
+                    setApplications([]);
+                }
             } catch (error) {
                 console.error("Error fetching applications:", error);
                 setApplications([]);
@@ -102,6 +115,8 @@ export default function JobListsPage() {
 
         if (token && role === 'candidate') {
             fetchApplications();
+        } else {
+            setLoading(false);
         }
     }, [token, role]);
 
@@ -114,9 +129,10 @@ export default function JobListsPage() {
         switch (status.toLowerCase()) {
             case 'pending':
                 return 'bg-yellow-100 text-yellow-800';
-            case 'reviewed':
+            case 'in-progress':
                 return 'bg-blue-100 text-blue-800';
-            case 'accepted':
+            case 'selected':
+            case "accepted":
                 return 'bg-green-100 text-green-800';
             case 'rejected':
                 return 'bg-red-100 text-red-800';
@@ -124,6 +140,100 @@ export default function JobListsPage() {
                 return 'bg-gray-100 text-gray-800';
         }
     };
+
+    const getOverallApplicationStatus = (application: Application) => {
+        console.log("=== APPLICATION DEBUG ===");
+        console.log("Application:", application);
+        console.log("Main status:", application.status);
+        console.log("Round statuses:", application.roundStatuses);
+        
+        if (!application || !application.jobId) return "pending";
+        
+        // If main application status is rejected, return rejected
+        if (application.status?.toLowerCase() === 'rejected') {
+            console.log("Returning rejected - main status");
+            return "rejected";
+        }
+        
+        // Check if we have roundStatuses array
+        if (application.roundStatuses && Array.isArray(application.roundStatuses) && application.roundStatuses.length > 0) {
+            console.log("Has round statuses, processing...");
+            
+            let selectedCount = 0;
+            let rejectedCount = 0;
+            
+            application.roundStatuses.forEach((roundStatus, index) => {
+                console.log(`Round ${roundStatus.round}:`, roundStatus.status);
+                if (roundStatus.status === "selected" || roundStatus.status === "completed") {
+                    selectedCount++;
+                } else if (roundStatus.status === "rejected") {
+                    rejectedCount++;
+                }
+            });
+            
+            console.log(`Selected: ${selectedCount}, Rejected: ${rejectedCount}, Total rounds: ${application.roundStatuses.length}`);
+            
+            // If any round is rejected, overall status is rejected
+            if (rejectedCount > 0) {
+                console.log("Returning rejected - round rejected");
+                return "rejected";
+            }
+            
+            // If all rounds are selected, overall status is selected
+            if (selectedCount === application.roundStatuses.length) {
+                console.log("Returning selected - all rounds selected");
+                return "selected";
+            }
+            
+            // If some rounds are selected but not all, status is in-progress
+            if (selectedCount > 0) {
+                console.log("Returning in-progress - some rounds selected");
+                return "in-progress";
+            }
+            
+            console.log("Returning pending - no rounds selected");
+            return "pending";
+        }
+        
+        // Fallback to main application status
+        const mainStatus = application.status?.toLowerCase();
+        console.log("Using main status fallback:", mainStatus);
+        
+        switch (mainStatus) {
+            case 'selected':
+            case 'accepted':
+                return "selected";
+            case 'rejected':
+                return "rejected";
+            case 'in-progress':
+            case 'reviewed':
+                return "in-progress";
+            case 'pending':
+            default:
+                return "pending";
+        }
+    };
+
+    const getRoundStatusForApplication = (application: Application, roundId: number) => {
+    if(roundId === 0) {
+        return "completed";
+    }
+
+    // Check if we have roundStatuses array
+    if(application.roundStatuses && Array.isArray(application.roundStatuses)) {
+        const roundStatus = application.roundStatuses.find(rs => rs.round === roundId);
+        if(roundStatus) {
+            return roundStatus.status;
+        }
+    }
+
+    // Fallback for round 1 to main status
+    if(roundId === 1) {
+        return application.status || "pending";
+    }
+
+    return "pending";
+};
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -147,13 +257,31 @@ export default function JobListsPage() {
             <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
                 <div className="text-center">
                     <p className="text-xl text-gray-600 mb-4">Please login to view your jobs</p>
-                    <Link href="/login" className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-600 transition-colors">
+                    <Link href="/auth/login" className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-600 transition-colors">
                         Login
                     </Link>
                 </div>
             </div>
         );
     }
+
+    const filteredJobs = jobs.filter(job => {
+        if(jobFilter === "all") return true;
+        if(jobFilter === "open") {
+            if(job.isClosed) return false;
+            if(job.closeDate && new Date(job.closeDate) <= new Date()) return false;
+        }
+        if(jobFilter === "closed") {
+            return job.isClosed || (job.closeDate && new Date(job.closeDate) <= new Date());
+        }
+        return true;
+    })
+
+    const filteredApplications = applications.filter(application => {
+        if(applicationFilter === "all") return true;
+        const status = getOverallApplicationStatus(application);
+        return status === applicationFilter;
+    })
 
     // Hire Manager View
     if (role === "hire_manager") {
@@ -167,8 +295,34 @@ export default function JobListsPage() {
                             <div className="font-semibold">My Posted Jobs</div>
                         </h1>
                     </div>
+
+                    <div className='rounded-lg border p-4 mb-6 bg-white'>
+                        <div className='flex items-center space-x-4'>
+                            <span className='font-medium text-gray-700'>Filter Jobs:</span>
+                            <div className='flex space-x-2'>
+                                <button
+                                    onClick={() => setJobFilter("all")}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${jobFilter === "all" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                >
+                                    All Jobs ({jobs.length})
+                                </button>
+                                <button
+                                    onClick={() => setJobFilter("open")}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${jobFilter === "open" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                >
+                                    Open Jobs
+                                </button>
+                                <button
+                                    onClick={() => setJobFilter("closed")}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${jobFilter === "closed" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                >
+                                    Closed Jobs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <div className="space-y-4">
+                    <div className="space-y-4 p-6">
                         {jobs.length === 0 ? (
                             <div className="bg-white rounded-lg shadow-md p-8 text-center">
                                 <p className="text-gray-600">No jobs posted yet.</p>
@@ -177,7 +331,7 @@ export default function JobListsPage() {
                                 </Link>
                             </div>
                         ) : (
-                            jobs.map((job, index) => (
+                            filteredJobs.map((job, index) => (
                                 <div 
                                     key={job._id} 
                                     className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-3 border border-gray-200"
@@ -233,6 +387,44 @@ export default function JobListsPage() {
                         <div className="font-semibold">My Applied Jobs</div>
                     </h1>
                 </div>
+
+                <div className='rounded-lg border p-4 mb-6 bg-white'>
+                    <div className='flex items-center space-x-4'>
+                        <span className='font-medium text-gray-700'>Filter Applications:</span>
+                        <div className='flex space-x-2'>
+                            <button
+                               onClick={() => setApplicationFilter("all")}
+                               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${applicationFilter === "all" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                            >
+                                All Applications ({applications.length})
+                            </button>
+                            <button
+                               onClick={() => setApplicationFilter("pending")}
+                               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${applicationFilter === "pending" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                            >
+                                Pending
+                            </button>
+                            <button
+                               onClick={() => setApplicationFilter("selected")}
+                               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${applicationFilter === "selected" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                            >
+                                Selected
+                            </button>
+                            <button
+                               onClick={() => setApplicationFilter("rejected")}
+                               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${applicationFilter === "rejected" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                            >
+                                Rejected
+                            </button>
+                            <button
+                               onClick={() => setApplicationFilter("in-progress")}
+                               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${applicationFilter === "in-progress" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                            >
+                                In Progress
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 
                 <div className="space-y-4">
                     {applications.length === 0 ? (
@@ -249,7 +441,7 @@ export default function JobListsPage() {
                             </Link>
                         </div>
                     ) : (
-                        applications.map((application, index) => (
+                        filteredApplications.map((application, index) => (
                             <div 
                                 key={application._id} 
                                 className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-4 border border-gray-200"
@@ -274,8 +466,8 @@ export default function JobListsPage() {
                                         
                                         {/* Application details */}
                                         <div className="mt-3 ml-2 flex items-center space-x-4">
-                                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
-                                                {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+                                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(getOverallApplicationStatus(application))}`}>
+                                                {getOverallApplicationStatus(application).charAt(0).toUpperCase() + getOverallApplicationStatus(application).slice(1)}
                                             </div>
                                             <span className="text-sm text-gray-500">
                                                 Applied on {formatDate(application.submittedAt)}

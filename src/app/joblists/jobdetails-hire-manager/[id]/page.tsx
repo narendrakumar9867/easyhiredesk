@@ -6,6 +6,7 @@ import axios from 'axios';
 import { useAuth } from "@/src/hooks/useAuth";
 import Navbar from '@/src/components/Navbar';
 import FooterLogin from '@/src/components/FooterLogin';
+import renderMakrdown from '@/src/components/MarkdownRenderer';
 
 interface Job {
   _id: string;
@@ -48,11 +49,11 @@ interface JobRounds {
 
 const JobDetailsHireManager: React.FC = () => {
   const params = useParams();
-  const { token } = useAuth();
+  const { token, authUser } = useAuth();
   const jobId = params?.id as string;
   const [job, setJob] = useState<Job | null>(null);
   const [jobRounds, setJobRounds] = useState<JobRounds | null>(null);
-  const [roundTitle, setRoundTitle] = useState<Job | null>(null);
+  const [roundTitles, setRoundTitles] = useState<{[key: number]: string}>({});
   const [candidateResponses, setCandidateResponses] = useState<FormResponse[]>([]);
   const [openCandidateId, setOpenCandidateId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,7 +62,8 @@ const JobDetailsHireManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('Job details');
   const [jobCloseDate, setJobCloseDate] = useState<string>("");
   const [jobCloseTime, setJobCloseTime] = useState<string>("");
-  const [isJobClosed, setIsJobClosed] = useState<boolean>(false);  
+  const [isJobClosed, setIsJobClosed] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch job details, rounds, and candidate responses
   useEffect(() => {
@@ -87,6 +89,18 @@ const JobDetailsHireManager: React.FC = () => {
           if (roundsResponse.data && roundsResponse.data.data) {
             console.log("Setting jobRounds to:", roundsResponse.data.data);
             setJobRounds(roundsResponse.data.data);
+            
+            // Extract and store round titles
+            if (roundsResponse.data.data.roundDetails && Array.isArray(roundsResponse.data.data.roundDetails)) {
+              const titles: {[key: number]: string} = {};
+              for (const detail of roundsResponse.data.data.roundDetails) {
+                if (detail.roundNumber && detail.title) {
+                  titles[detail.roundNumber] = detail.title;
+                }
+              }
+              setRoundTitles(titles);
+              console.log("Round titles set:", titles);
+            }
           }
         } catch (roundsError: any) {
           console.log("No rounds found for this job yet:", roundsError.response?.data?.message);
@@ -235,6 +249,50 @@ const JobDetailsHireManager: React.FC = () => {
     }
   };
 
+  const handleDeleteJob = async () => {
+    const proceedToDelete = window.confirm(
+      `⚠️ WARNING: You are about to permanently delete this job!\n\n` +
+      `This will delete:\n` +
+      `• Job posting: "${job?.jobTitle}"\n` +
+      `• All ${candidateResponses.length} candidate application(s)\n` +
+      `• All ${tabs.length - 1} interview round(s)\n` +
+      `• All associated data and files\n\n` +
+      `This action CANNOT be undone!\n\n` +
+      `Click OK to proceed to confirmation.`
+    );
+    
+    if (!proceedToDelete) return;
+    
+    const userInput = prompt(
+      `To confirm deletion, please type DELETE (in capital letters):`
+    );
+    
+    if (userInput !== 'DELETE') {
+      if (userInput !== null) {
+        alert('Deletion cancelled. You must type "DELETE" exactly to confirm.');
+      }
+      return;
+    }
+    
+    try {
+      setIsDeleting(true);
+      const response = await axios.delete(
+        `http://localhost:5000/api/jobs/${jobId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.success) {
+        alert('✓ Job deleted successfully!');
+        window.location.href = '/joblists';
+      }
+    } catch (error: any) {
+      console.error('Error deleting job:', error);
+      alert('Failed to delete job: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const viewUploadedFile = async (responseId: string, fieldLabel: string) => {
     try {
       const response = await axios.get(`http://localhost:5000/api/form/file/${responseId}/${fieldLabel}`, {
@@ -256,10 +314,17 @@ const JobDetailsHireManager: React.FC = () => {
     try {
       setUpdating(responseId);
       
+      const hireManagerEmail = authUser?.email || "";
+      if (!hireManagerEmail) {
+        alert('Unable to send email: User email not found. Please log in again.');
+        console.error('No hire manager email found in authUser');
+      }
+      
       console.log(`Updating candidate ${responseId} status to ${status} for round ${round}`);
+      console.log('Hire manager email being sent:', hireManagerEmail);
       const response = await axios.put(
         `http://localhost:5000/api/form/update-status/${responseId}`,
-        { status, notes: notes || '', round, hireManagerEmail: "botcoder89@gmail.com" },
+        { status, notes: notes || '', round, hireManagerEmail },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -340,38 +405,6 @@ const JobDetailsHireManager: React.FC = () => {
   };
 
   const tabs = generateTabs();
-
-  // Render markdown function
-  const renderMarkdown = (text: string) => {
-    if (!text) return <p className="text-gray-500 italic">No content added yet...</p>;
-
-    return text.split('\n').map((line, index) => {
-      if (line.startsWith('# ')) {
-        return <h1 key={index} className="text-3xl font-bold text-gray-900 mb-4 mt-6">{line.substring(2)}</h1>;
-      }
-      if (line.startsWith('## ')) {
-        return <h2 key={index} className="text-2xl font-semibold text-gray-800 mb-3 mt-5">{line.substring(3)}</h2>;
-      }
-      if (line.startsWith('### ')) {
-        return <h3 key={index} className="text-xl font-medium text-gray-700 mb-2 mt-4">{line.substring(4)}</h3>;
-      }
-      
-      if (line.startsWith('- ') || line.startsWith('* ')) {
-        return (
-          <li key={index} className="text-gray-700 mb-1 ml-4">
-            <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-            {line.substring(2)}
-          </li>
-        );
-      }
-      
-      if (line.trim() === '') {
-        return <br key={index} />;
-      }
-      
-      return <p key={index} className="text-gray-700 mb-3">{line}</p>;
-    });
-  };
 
   const renderCandidateCard = (candidate: FormResponse, index: number, roundNumber?: number) => {
       const isUpdating = updating === candidate._id;
@@ -548,7 +581,7 @@ const JobDetailsHireManager: React.FC = () => {
           <div className="bg-white rounded-lg p-6 mb-6">
             <div className="mb-6">
               <h3 className="text-black text-lg font-semibold mb-4">Company Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 border rounded-lg p-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Company Name</p>
                   <p className="text-black font-semibold">{job?.companyName}</p>
@@ -593,8 +626,8 @@ const JobDetailsHireManager: React.FC = () => {
             
             <div>
               <h3 className="text-black text-lg font-semibold mb-4">Job Description</h3>
-              <div className="prose prose-blue max-w-none">
-                {renderMarkdown(job?.aboutJob || "")}
+              <div className="prose prose-blue max-w-none border rounded-lg p-6">
+                {renderMakrdown(job?.aboutJob || "")}
               </div>
             </div>
 
@@ -712,6 +745,66 @@ const JobDetailsHireManager: React.FC = () => {
                   </div>
                 </>
               )}
+            </div>
+
+            {/* Delete Job Section */}
+            <div className="mt-6 p-4 bg-red-50 border-2 border-red-400 rounded-lg">
+              <div className="flex items-start mb-3">
+                <svg className="w-6 h-6 text-red-600 mr-2 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <h4 className="text-lg font-semibold text-red-700 mb-1">Danger Zone</h4>
+                  <p className="text-red-800 text-sm font-medium">
+                    Once you delete this job, there is no going back. Please be certain.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white border border-red-300 rounded p-3 mb-3">
+                <p className="text-gray-700 text-sm mb-2">This action will permanently delete:</p>
+                <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                  <li className="flex items-center">
+                    <span className="text-red-500 mr-2">•</span>
+                    Job posting: <span className="font-semibold ml-1">{job?.jobTitle}</span>
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-red-500 mr-2">•</span>
+                    {candidateResponses.length} candidate application(s)
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-red-500 mr-2">•</span>
+                    {tabs.length - 1} interview round(s) and all round data
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-red-500 mr-2">•</span>
+                    All uploaded files and documents
+                  </li>
+                </ul>
+              </div>
+              
+              <button
+                onClick={handleDeleteJob}
+                disabled={isDeleting}
+                className="w-full bg-red-600 text-white px-4 py-3 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold"
+              >
+                {isDeleting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Deleting Job...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete Job Permanently
+                  </>
+                )}
+              </button>
             </div>
           </div>
         );
@@ -874,7 +967,16 @@ const JobDetailsHireManager: React.FC = () => {
                       : 'bg-black text-white border border-gray-600 hover:bg-gray-700'
                   }`}
                 >
-                  {tab}
+                  {tab.startsWith('Round ') ? (
+                    <>
+                      {tab}
+                      {roundTitles[parseInt(tab.split(' ')[1])] && (
+                        <> - {roundTitles[parseInt(tab.split(' ')[1])]}</>
+                      )}
+                    </>
+                  ) : (
+                    tab
+                  )}
                 </button>
                 {index < tabs.length - 1 && (
                   <div className="flex-1 h-px bg-black mx-4 min-w-[20px]"></div>

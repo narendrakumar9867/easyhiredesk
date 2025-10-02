@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { CheckCircle } from "lucide-react";
 import axios from 'axios';
-import LoginPage from '../app/auth/Login';
-import PublicFormSignUp from '../app/auth/SignUp';
+import LoginPage from "../app/auth/login/page";
+import SignUpPage from "../app/auth/signup/page";
 import { useAuth } from "@/src/hooks/useAuth";
 import { FormConfig, FormField } from "../types/form";
 import renderMakrdown from "./MarkdownRenderer";
@@ -429,7 +429,7 @@ useEffect(() => {
       />
 
       {/* Signup Modal */}
-      <PublicFormSignUp
+      <SignUpPage
         isOpen={showSignup}
         onClose={() => setShowSignup(false)}
         onLoginClick={handleSignupToLogin}

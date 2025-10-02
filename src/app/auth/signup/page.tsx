@@ -17,7 +17,7 @@ interface SignUpPageProps {
   onLoginClick?: () => void; // Add this prop for navigation to login
 }
 
-export default function PublicFormSignUp({ isOpen, onClose, onLoginClick }: SignUpPageProps) {
+export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPageProps) {
   if(!isOpen) return null;
 
   const [formData, setFormData] = useState<FormData>({

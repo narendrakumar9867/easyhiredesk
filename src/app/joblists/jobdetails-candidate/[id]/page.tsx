@@ -6,6 +6,7 @@ import { useAuth } from "@/src/hooks/useAuth";
 import { axiosInstance } from "@/src/utils/axios";
 import Navbar from '@/src/components/Navbar';
 import FooterLogin from '@/src/components/FooterLogin';
+import renderMakrdown from '@/src/components/MarkdownRenderer';
 
 export default function CandidateJobDetailsPage() {
     const params = useParams();
@@ -15,6 +16,7 @@ export default function CandidateJobDetailsPage() {
     const [applicationData, setApplicationData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [jobRounds, setJobRounds] = useState(null);
+    const [roundTitles, setRoundTitles] = useState<{[key: number]: string}>({});
     const [emailTemplate, setEmailTemplate] = useState(null);
     const [emailHistory, setEmailHistory] = useState([]);
     
@@ -269,37 +271,6 @@ export default function CandidateJobDetailsPage() {
         )
     }
 
-    const renderMarkdown = (text: string) => {
-        if (!text) return <p className="text-gray-500 italic">No content added yet...</p>;
-
-        return text.split('\n').map((line, index) => {
-        if (line.startsWith('# ')) {
-            return <h1 key={index} className="text-3xl font-bold text-gray-900 mb-4 mt-6">{line.substring(2)}</h1>;
-        }
-        if (line.startsWith('## ')) {
-            return <h2 key={index} className="text-2xl font-semibold text-gray-800 mb-3 mt-5">{line.substring(3)}</h2>;
-        }
-        if (line.startsWith('### ')) {
-            return <h3 key={index} className="text-xl font-medium text-gray-700 mb-2 mt-4">{line.substring(4)}</h3>;
-        }
-        
-        if (line.startsWith('- ') || line.startsWith('* ')) {
-            return (
-            <li key={index} className="text-gray-700 mb-1 ml-4">
-                <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-                {line.substring(2)}
-            </li>
-            );
-        }
-        
-        if (line.trim() === '') {
-            return <br key={index} />;
-        }
-        
-        return <p key={index} className="text-gray-700 mb-3">{line}</p>;
-        });
-    };
-
     const renderRoundContent = () => {
     const currentRound = applicationRounds.find(round => round.id === selectedRound);
     
@@ -390,7 +361,7 @@ export default function CandidateJobDetailsPage() {
                         <h4 className="text-xl font-semibold text-gray-800 mb-4">Job Description</h4>
                         <div className="bg-white border border-gray-200 rounded-lg p-6">
                             <div className="text-gray-700 whitespace-pre-line leading-relaxed">
-                                {renderMarkdown(jobData?.aboutJob || "")}
+                                {renderMakrdown(jobData?.aboutJob || "")}
                             </div>
                         </div>
                     </div>

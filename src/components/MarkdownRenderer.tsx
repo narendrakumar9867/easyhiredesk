@@ -17,7 +17,6 @@ const renderMakrdown = (text: string)  => {
       if(line.startsWith("- ") || line.startsWith("* ")) {
         return(
           <li key={index} className="text-gray-700 mb-1 ml-4">
-            <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
             {line.substring(2)}
           </li>
         );

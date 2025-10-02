@@ -7,6 +7,7 @@ import Navbar from "@/src/components/Navbar";
 import FooterLogin from '@/src/components/FooterLogin';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/hooks/useAuth';
+import renderMakrdown from '@/src/components/MarkdownRenderer';
 
 export default function JobDetailsPage() {
   const [activeTab, setActiveTab] = useState('edit');
@@ -83,114 +84,6 @@ export default function JobDetailsPage() {
       case 'github': return <Github className="w-4 h-4" />;
       default: return <Globe className="w-4 h-4" />;
     }
-  };
-
-  const renderMarkdown = (text) => {
-    if (!text) return <p className="text-gray-500 italic">No content added yet...</p>;
-
-    return text.split('\n').map((line, index) => {
-     
-      if (line.startsWith('# ')) {
-        return <h1 key={index} className="text-3xl font-bold text-gray-900 mb-4 mt-6">{line.substring(2)}</h1>;
-      }
-      if (line.startsWith('## ')) {
-        return <h2 key={index} className="text-2xl font-semibold text-gray-800 mb-3 mt-5">{line.substring(3)}</h2>;
-      }
-      if (line.startsWith('### ')) {
-        return <h3 key={index} className="text-xl font-medium text-gray-700 mb-2 mt-4">{line.substring(4)}</h3>;
-      }
-      
-      if (line.startsWith('- ') || line.startsWith('* ')) {
-        return (
-          <li key={index} className="text-gray-700 mb-1 ml-4">
-            <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-            {line.substring(2)}
-          </li>
-        );
-      }
-      
-      var isNumberedList = function(str) {
-        let i = 0;
-
-        while (i < str.length && str[i] >= "0" && str[i] <= "9") {
-            i++;
-        }
-
-        return i > 0 && i < str.length - 1 && str[i] === "." && str[i + 1] === " ";
-      };
-
-      function extractNumberListContent(str) {
-        let i = 0;
-
-        while (i < str.length && str[i] >= "0" && str[i] <= "9") {
-            i++;
-        }
-
-        i += 2;
-
-        return str.substring(i);
-      }
-
-      if (isNumberedList(line)) {
-        return <li key={index} className="text-gray-700 mb-1 ml-4 list-decimal">
-            {extractNumberListContent(line)}
-        </li>
-      }
-      
-      function parserBoldText(text) {
-        const result = [];
-
-        let i = 0;
-        let currentText = "";
-
-        while(i < text.length) {
-
-            if(i < text.length - 1 && text[i] === "*" && text[i + 1] === "*") {
-
-                if(currentText) {
-                    result.push(currentText);
-                    currentText = "";
-                }
-
-                let j = i + 2;
-                let boldContent = "";
-
-                while(j < text.length - 1) {
-                    if(text[j] === "*" && text[j + 1] === "*") {
-                        result.push(`<strong>${boldContent}</strong>`);
-                        i = j + 2;
-                        break;
-                    }
-                    boldContent += text[j];
-                    j++;
-                }
-
-                if(j >= text.length - 1) {
-                    currentText += "**";
-                    i++;
-                }
-            }
-            else {
-                currentText += text[i];
-                i++;
-            }
-        }
-
-        if(currentText) {
-            result.push(currentText);
-        }
-
-        return result.join("");
-      }
-
-      const boldText = parserBoldText(line);
-
-      if (line.trim() === '') {
-        return <br key={index} />;
-      }
-      
-      return <p key={index} className="text-gray-700 mb-3" dangerouslySetInnerHTML={{ __html: boldText }}></p>;
-    });
   };
 
   return (
@@ -409,7 +302,7 @@ export default function JobDetailsPage() {
                     </div>
                     ) : (
                     <div className="p-6 prose prose-blue max-w-none">
-                        {renderMarkdown(formData.aboutJob)}
+                        {renderMakrdown(formData.aboutJob)}
                     </div>
                     )}
                 </div>
