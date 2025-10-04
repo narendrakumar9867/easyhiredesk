@@ -44,6 +44,16 @@ export default function CandidateJobDetailsPage() {
                         const roundsResponse = await axiosInstance.get(`/rounds/${response.data.application.jobId._id}`, config);
                         if(roundsResponse.data && roundsResponse.data.data) {
                             setJobRounds(roundsResponse.data.data);
+
+                            if(roundsResponse.data.data.roundDetails && Array.isArray(roundsResponse.data.data.roundDetails)) {
+                                const titles: {[key: number]: string} = {};
+                                for(const detail of roundsResponse.data.data.roundDetails) {
+                                    if(detail.roundNumber && detail.title) {
+                                        titles[detail.roundNumber] = detail.title;
+                                    }
+                                }
+                                setRoundTitles(titles);
+                            }
                         }
                     } catch (error: any) {
                         console.log("No rounds found for this job yet:", error.response?.data?.message);
@@ -93,9 +103,8 @@ export default function CandidateJobDetailsPage() {
         );
     }
 
-    const jobData = applicationData.jobId; // Job data is populated in the application object
+    const jobData = applicationData.jobId;
 
-    // Fixed rounds for now (will make dynamic later as you mentioned)
     const generateApplicationRounds = () => {
         const rounds = [
             { 
@@ -110,10 +119,11 @@ export default function CandidateJobDetailsPage() {
 
         if(jobRounds && jobRounds.selectedRounds && Array.isArray(jobRounds.selectedRounds)) {
             jobRounds.selectedRounds.forEach((roundData, index) => {
+                const roundNum = index + 1;
                 rounds.push({
                     id: index + 1,
-                    name: `Round ${index + 1}`,
-                    title: roundData.title,
+                    name: roundTitles[roundNum] ? `Round ${roundNum} - ${roundTitles[roundNum]}` : `Round ${roundNum}`,
+                    title: roundTitles[roundNum] || roundData,
                     description: 'Here the mail from details share for this round',
                     duration: 'result date',
                     type: 'Interview Round',
@@ -193,7 +203,6 @@ export default function CandidateJobDetailsPage() {
             }
         }
 
-        // Fallback for round 1 to main status
         if(roundId === 1) {
             return applicationData.status || "pending";
         }
@@ -224,7 +233,7 @@ export default function CandidateJobDetailsPage() {
         if(!emailInfo.sent) {
             return(
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-yellow-800">No email sent yet for this round.</p>
+                    <p className="text-yellow-800">Coming Soon... - No email sent yet for this round.</p>
                 </div>
             );
         }
@@ -279,11 +288,11 @@ export default function CandidateJobDetailsPage() {
             return (
                 <div className="space-y-6">
                     {/* Application Status Overview */}
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <div className="bg-gradient-to-r bg-gray-100 border border-blue-200 rounded-lg p-6 mb-6">
                         <h3 className="text-2xl font-bold text-gray-800 mb-4">Application Status</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="text-center">
-                                <div className="text-3xl font-bold text-blue-600">
+                                <div className="text-3xl font-bold text-black">
                                     {applicationRounds.length - 1}
                                 </div>
                                 <div className="text-sm text-gray-600">Total Round</div>
@@ -292,7 +301,7 @@ export default function CandidateJobDetailsPage() {
                                 <div className={`text-3xl font-bold capitalize ${
                                     getOverallApplicationStatus() === "selected" ? "text-green-600" :
                                     getOverallApplicationStatus() === "rejected" ? "text-red-600" :
-                                    getOverallApplicationStatus() === "in-progress" ? "text-blue-600" :
+                                    getOverallApplicationStatus() === "in-progress" ? "text-black" :
                                     "text-yellow-600"
                                     }`}>
                                     {getOverallApplicationStatus().charAt(0).toUpperCase() + getOverallApplicationStatus().slice(1)}
@@ -300,7 +309,7 @@ export default function CandidateJobDetailsPage() {
                                 <div className="text-sm text-gray-600">Overall Application Status</div>
                             </div>
                             <div className="text-center">
-                                <div className="text-3xl font-bold text-purple-600">
+                                <div className="text-3xl font-bold text-black">
                                     {new Date(applicationData.submittedAt).toLocaleDateString()}
                                 </div>
                                 <div className="text-sm text-gray-600">Applied Date</div>
@@ -371,20 +380,9 @@ export default function CandidateJobDetailsPage() {
                         <h4 className="text-xl font-semibold text-gray-800 mb-4">Your Application Details</h4>
                         <div className="bg-white border border-gray-200 rounded-lg p-6">
                             <div className="space-y-3">
-                                <div>
-                                    <span className="text-gray-600 font-medium">Name: </span>
-                                    <span className="text-gray-800">{applicationData.candidateName}</span>
-                                </div>
-                                <div>
-                                    <span className="text-gray-600 font-medium">Email: </span>
-                                    <span className="text-gray-800">{applicationData.candidateEmail}</span>
-                                </div>
-                                <div>
-                                    <span className="text-gray-600 font-medium">Submitted: </span>
-                                    <span className="text-gray-800">
-                                        {new Date(applicationData.submittedAt).toLocaleString()}
-                                    </span>
-                                </div>
+                               <div>
+                                <h2>Coming Soon...</h2>
+                               </div>
                             </div>
                         </div>
                     </div>
@@ -429,7 +427,7 @@ export default function CandidateJobDetailsPage() {
             < Navbar />
             <div className="max-w-full px-9 py-3 flex-1">
                 {/* Main Content */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-16">
                     {/* Left Sidebar - Application Progress */}
                     <div className="lg:col-span-1">
                         {/* Header */}
