@@ -7,45 +7,8 @@ import { useAuth } from "@/src/hooks/useAuth";
 import Navbar from '@/src/components/Navbar';
 import FooterLogin from '@/src/components/FooterLogin';
 import renderMakrdown from '@/src/components/MarkdownRenderer';
-
-interface Job {
-  _id: string;
-  companyName: string;
-  jobTitle: string;
-  location: string;
-  companyWebsite?: string;
-  socialLinks?: { platform: string; url: string; id: number }[];
-  aboutJob: string;
-  title: string,
-  createdAt?: string;
-  closeDate?: string;
-  isClosed?: boolean;
-}
-
-interface FormResponse {
-  _id: string;
-  candidateName: string;
-  candidateEmail: string;
-  responses: {
-    fieldLabel: string;
-    fieldType: string;
-    value: any;
-  }[];
-  status: 'pending' | 'selected' | 'rejected';
-  submittedAt: string;
-  notes?: string;
-  roundStatuses?: {
-    round: number;
-    status: 'pending' | 'selected' | 'rejected';
-    notes?: string;
-  }[];
-}
-
-interface JobRounds {
-  jobId: string;
-  selectedRounds: string[];
-  createdAt?: string;
-}
+import { FormResponse } from '@/src/types/form';
+import { Job, JobRounds } from '@/src/types/Job';
 
 const JobDetailsHireManager: React.FC = () => {
   const params = useParams();
@@ -58,7 +21,7 @@ const JobDetailsHireManager: React.FC = () => {
   const [openCandidateId, setOpenCandidateId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [updating, setUpdating] = useState<string | null>(null); // Track which candidate is being updated
+  const [updating, setUpdating] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('Job details');
   const [jobCloseDate, setJobCloseDate] = useState<string>("");
   const [jobCloseTime, setJobCloseTime] = useState<string>("");
@@ -237,7 +200,7 @@ const JobDetailsHireManager: React.FC = () => {
         setJob(prev => prev ? {
           ...prev,
           isClosed: false,
-          closeDate: null
+          closeDate: undefined
         } : null);
         // Clear the form fields
         setJobCloseDate('');
@@ -444,13 +407,13 @@ const JobDetailsHireManager: React.FC = () => {
             {/* Status badge */}
             <div className="mb-2">
               <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)) === 'selected'  // ✅ Use current round status
+                getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)) === 'selected'
                     ? 'bg-green-100 text-green-800'
                     : getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)) === 'rejected'
                     ? 'bg-red-100 text-red-800'
                     : 'bg-yellow-100 text-yellow-800'
                 }`}>
-                  {getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)).charAt(0).toUpperCase() + getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)).slice(1)} {/* ✅ Show current round status */}
+                  {getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)).charAt(0).toUpperCase() + getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)).slice(1)}
               </span>
             </div>
           </div>
@@ -474,11 +437,11 @@ const JobDetailsHireManager: React.FC = () => {
             <button
               onClick={() => {
                 const currentRound = getCurrentRoundFromTab(activeTab);
-                updateCandidateStatus(candidate._id, "rejected", currentRound); // ✅ Add round parameter
+                updateCandidateStatus(candidate._id, "rejected", currentRound);
               }}
               disabled={isUpdating}
               className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)) === 'rejected'  // ✅ Use current round status
+                getRoundStatus(candidate, getCurrentRoundFromTab(activeTab)) === 'rejected' 
                   ? 'bg-red-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-red-100 hover:text-red-700'
               }`}

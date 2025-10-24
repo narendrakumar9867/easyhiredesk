@@ -1,9 +1,9 @@
 "use client";
 import { useState, useCallback } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import toast from "react-hot-toast";
 import { useAuth } from "@/src/hooks/useAuth";
-import Image from "next/image";
+// import Image from "next/image";
 
 interface FormData {
   email: string;
@@ -24,9 +24,9 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
     password: "",
   });
   const { login, isLoggingIn } = useAuth();
-  const supabase = createClientComponentClient();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>("");
+  // const supabase = createClientComponentClient();
+  // const [loading, setLoading] = useState(false);
+  // const [error, setError] = useState<string>("");
   
   const validateEmail = (email: string): boolean => {
     if(!email) {
@@ -52,29 +52,29 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
     return domainName.length > 0 && topLevelDomain.length > 0;
   }
 
-  const handleGooleLogin = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      // Get the current URL without any existing query parameters
-      const currentUrl = new URL(window.location.href);
-      const cleanUrl = `${currentUrl.origin}${currentUrl.pathname}`;
+  // const handleGooleLogin = async () => {
+  //   setLoading(true);
+  //   setError("");
+  //   try {
+  //     // Get the current URL without any existing query parameters
+  //     const currentUrl = new URL(window.location.href);
+  //     const cleanUrl = `${currentUrl.origin}${currentUrl.pathname}`;
       
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: cleanUrl
-        }
-      });
-      if(error) {
-        setError(error.message);
-      }
-    } catch {
-      setError("An unexpected error occurred");
-    } finally {
-      setLoading(false);
-    }
-  }
+  //     const { error } = await supabase.auth.signInWithOAuth({
+  //       provider: "google",
+  //       options: {
+  //         redirectTo: cleanUrl
+  //       }
+  //     });
+  //     if(error) {
+  //       setError(error.message);
+  //     }
+  //   } catch {
+  //     setError("An unexpected error occurred");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
 
   const validateForm = useCallback((): boolean => {
     if(!formData.email.trim()) {
@@ -164,7 +164,7 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
 
           <p className="flex flex-col items-center">or</p>
 
-          <div className="mt-4">
+          {/* <div className="mt-4">
             <button
             type="button"
             onClick={handleGooleLogin}
@@ -180,7 +180,7 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
               />
               Sign In with Google
             </button>
-          </div>
+          </div> */}
         </form>
 
         <div className="mt-4 text-center">

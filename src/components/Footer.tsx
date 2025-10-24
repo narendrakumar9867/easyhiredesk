@@ -5,49 +5,41 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer className="bg-white mt-10">
-      <div className="max-w mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="max-w mx-auto px-18 py-12 grid grid-cols-1 md:grid-cols-4 gap-20">
         <div>
           <h1 className="text-4xl font-extrabold tracking-wide bg-gradient-to-r bg-clip-text drop-shadow-md py-2 text-black">
             Easyhire<span className="text-gray-400">Desk</span>
           </h1>
 
           <p className="text-gray-600 mt-3 text-sm">
-            Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. 
-            Velit officia consequat duis enim velit mollit.
+            This project helped to the freshers and hire coordinator with easy manage & processed eficient time to complete selection process.
           </p>
 
-          <Link href="#" className="text-blue-600 mt-3 inline-block text-sm">
+          <Link href="about/" className="text-blue-600 mt-3 inline-block text-sm">
             Learn more
           </Link>
         </div>
 
-        <div className="md:px-36">
+        <div className="md:px-40">
           <h3 className="font-semibold mb-3">Services</h3>
           <ul className="space-y-2 text-sm text-gray-600">
-            <li><Link href="about">About</Link></li>
-            <li><Link href="services">Services</Link></li>
-            <li><Link href="works">Works</Link></li>
-            <li><Link href="career">Career</Link></li>
+            <li><Link href="services/hire-manager">Hire Manager</Link></li>
+            <li><Link href="services/candidates">Candidates</Link></li>
           </ul>
         </div>
 
-        <div className="md:px-20">
-          <h3 className="font-semibold mb-3">About</h3>
+        <div className="md:px-24">
+          <h3 className="font-semibold mb-3">Features</h3>
           <ul className="space-y-2 text-sm text-gray-600">
-            <li><Link href="#">Customer Support</Link></li>
-            <li><Link href="#" className="text-blue-600">Delivery Details</Link></li>
-            <li><Link href="#">Terms & Conditions</Link></li>
-            <li><Link href="#">Privacy Policy</Link></li>
+            <li><Link href="features/ai-assistance">AI Assistance</Link></li>
           </ul>
         </div>
 
-        <div className="md:px-16">
+        <div className="md:px-">
           <h3 className="font-semibold mb-3">Contact Us</h3>
           <ul className="space-y-2 text-sm text-gray-600">
-            <li><Link href="#">Free eBooks</Link></li>
-            <li><Link href="#">Development Tutorial</Link></li>
-            <li><Link href="#">How to - Blog</Link></li>
-            <li><Link href="#">Youtube Playlist</Link></li>
+            <li><Link href="contact/">Contact Number</Link></li>
+            <li><Link href="contact/">Mail</Link></li>
           </ul>
         </div>
       </div>
