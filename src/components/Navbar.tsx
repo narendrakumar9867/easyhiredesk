@@ -64,7 +64,7 @@ export default function Navbar() {
     const [showSingUp, setshowSingUp] = useState(false);
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     
-    const { authUser, logout } = useAuth();
+    const { authUser } = useAuth();
 
     function toggleSideMenu() {
         setSideMenuOpen(!isSideMenuOpen);
@@ -74,16 +74,11 @@ export default function Navbar() {
         setSideMenuOpen(false);
     }
 
-    function handleLogout() {
-        logout();
-        setShowProfileDropdown(false);
-    }
-
     return(
         <nav>
             <div className="mx-auto flex w-full max-w justify-between px-3 py-5 text-sm border-b rounded-lg">
                 <h1 className="py-1 md:py-0 px-5 text-4xl font-extrabold tracking-wide bg-gradient-to-r bg-clip-text text-black drop-shadow-md">
-                    Easyhire<span className="text-shadow-black">Desk</span>
+                    Easyhire<span className="text-gray-400">Desk</span>
                 </h1>
                 
                 <section ref={animationParent} className="flex items-center">
@@ -138,7 +133,7 @@ export default function Navbar() {
                         <div className="relative">
                             <button
                                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                                className="flex items-center gap-2 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-all"
+                                className="flex items-center gap-2 p-2 rounded-full transition-all"
                             >
                                 {authUser.profilePic ? (
                                     <img 
@@ -165,13 +160,6 @@ export default function Navbar() {
                                     >
                                         Profile
                                     </Link>
-                                    
-                                    <button
-                                        onClick={handleLogout}
-                                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                    >
-                                        Logout
-                                    </button>
                                 </div>
                             )}
                         </div>

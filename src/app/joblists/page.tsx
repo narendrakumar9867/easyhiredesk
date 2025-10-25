@@ -5,34 +5,7 @@ import { useAuth } from "@/src/hooks/useAuth";
 import { axiosInstance } from "@/src/utils/axios";
 import Navbar from '@/src/components/Navbar';
 import FooterLogin from '@/src/components/FooterLogin';
-
-interface Job {
-    _id: string;
-    companyName: string;
-    jobTitle: string;
-    location: string;
-    companyWebsite?: string;
-    socialLinks?: any[];
-    aboutJob: string;
-    createdBy?: string;
-    createdAt?: string;
-    closeDate?: string;
-    isClosed?: string;
-}
-
-interface Application {
-    _id: string;
-    jobId: Job;
-    candidateEmail: string;
-    candidateName: string;
-    status: string; //  'selected', 'Pending' ,'Rejected'
-    roundStatuses?: {
-        round: number;
-        status: "pending" | "selected" | "rejected";
-    }[];
-    submittedAt: string;
-    responses: any[];
-}
+import { Job, Application } from '@/src/types/Job';
 
 export default function JobListsPage() {
     const { authUser, token } = useAuth();
@@ -215,25 +188,25 @@ export default function JobListsPage() {
     };
 
     const getRoundStatusForApplication = (application: Application, roundId: number) => {
-    if(roundId === 0) {
-        return "completed";
-    }
-
-    // Check if we have roundStatuses array
-    if(application.roundStatuses && Array.isArray(application.roundStatuses)) {
-        const roundStatus = application.roundStatuses.find(rs => rs.round === roundId);
-        if(roundStatus) {
-            return roundStatus.status;
+        if(roundId === 0) {
+            return "completed";
         }
-    }
 
-    // Fallback for round 1 to main status
-    if(roundId === 1) {
-        return application.status || "pending";
-    }
+        // Check if we have roundStatuses array
+        if(application.roundStatuses && Array.isArray(application.roundStatuses)) {
+            const roundStatus = application.roundStatuses.find(rs => rs.round === roundId);
+            if(roundStatus) {
+                return roundStatus.status;
+            }
+        }
 
-    return "pending";
-};
+        // Fallback for round 1 to main status
+        if(roundId === 1) {
+            return application.status || "pending";
+        }
+
+        return "pending";
+    };
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -288,84 +261,96 @@ export default function JobListsPage() {
         console.log("Rendering hire manager view for role:", role);
         return (
             <div className="flex flex-col min-h-screen bg-gray-50 max-w-full">
-                < Navbar />
-                <div className="max-w-full px-9 py-4 flex-1">
-                    <div className="flex flex-col items-center justify-between mb-8">
-                        <h1 className="flex items-center space-x-2 bg-black hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors duration-200">
-                            <div className="font-semibold">My Posted Jobs</div>
-                        </h1>
-                    </div>
-
-                    <div className='rounded-lg border p-4 mb-6 bg-white'>
-                        <div className='flex items-center space-x-4'>
-                            <span className='font-medium text-gray-700'>Filter Jobs:</span>
-                            <div className='flex space-x-2'>
+                <Navbar />
+                <div className="max-w-full px-9 py-4 flex-1 flex gap-6">
+                    {/* Sidebar */}
+                        <div className="w-64 flex-shrink-0 bg-gray-800 rounded-lg shadow-md p-4">
+                            <h2 className="text-lg font-semibold mb-4 text-white text-center border-b rounded-lg">Filter Jobs</h2>
+                            <div className="space-y-2">
                                 <button
                                     onClick={() => setJobFilter("all")}
-                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${jobFilter === "all" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                    className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                                        jobFilter === "all" 
+                                            ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600" 
+                                            : "text-white hover:bg-gray-600"
+                                    }`}
                                 >
                                     All Jobs ({jobs.length})
                                 </button>
                                 <button
                                     onClick={() => setJobFilter("open")}
-                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${jobFilter === "open" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                    className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                                        jobFilter === "open" 
+                                            ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600" 
+                                            : "text-white hover:bg-gray-600"
+                                    }`}
                                 >
                                     Open Jobs
                                 </button>
                                 <button
                                     onClick={() => setJobFilter("closed")}
-                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${jobFilter === "closed" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                    className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                                        jobFilter === "closed" 
+                                            ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600" 
+                                            : "text-white hover:bg-gray-600"
+                                    }`}
                                 >
                                     Closed Jobs
                                 </button>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div className="space-y-4 p-6">
-                        {jobs.length === 0 ? (
-                            <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                                <p className="text-gray-600">No jobs posted yet.</p>
-                                <Link href="/hireprocess" className="inline-block mt-4 bg-black text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors">
-                                    Post New Job
-                                </Link>
-                            </div>
-                        ) : (
-                            filteredJobs.map((job, index) => (
-                                <div 
-                                    key={job._id} 
-                                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-3 border border-gray-200"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        {/* Left side - Job info */}
-                                        <div className="flex-1">
-                                            <div className="bg-gray-800 text-white rounded-lg px-6 py-4 inline-block min-w-[400px]">
-                                                <div className="flex items-center space-x-5">
-                                                    <div className="bg-white text-gray-800 rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                                                        {index + 1}
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="text-lg font-semibold">{job.jobTitle}</h3>
-                                                        <div className="text-sm text-gray-300 mt-1 flex gap-7">
-                                                            <span>{job.companyName}</span> 
-                                                            <span>{job.location}</span>
+
+                    {/* Main Content */}
+                    <div className="flex-1">
+                        <div className="mb-6">
+                            <h1 className="text-2xl font-bold text-gray-800">My Posted Jobs</h1>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            {jobs.length === 0 ? (
+                                <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                                    <p className="text-gray-600">No jobs posted yet.</p>
+                                    <Link href="/hireprocess" className="inline-block mt-4 bg-black text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors">
+                                        Post New Job
+                                    </Link>
+                                </div>
+                            ) : (
+                                filteredJobs.map((job, index) => (
+                                    <div 
+                                        key={job._id} 
+                                        className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-3 border border-gray-200"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            {/* Left side - Job info */}
+                                            <div className="flex-1">
+                                                <div className="bg-gray-800 text-white rounded-lg px-6 py-4 inline-block min-w-[400px]">
+                                                    <div className="flex items-center space-x-5">
+                                                        <div className="bg-white text-gray-800 rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                                                            {index + 1}
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold">{job.jobTitle}</h3>
+                                                            <div className="text-sm text-gray-300 mt-1 flex gap-7">
+                                                                <span>{job.companyName}</span> 
+                                                                <span>{job.location}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div className="flex items-center space-x-2">
-                                            <Link href={`/joblists/jobdetails-hire-manager/${job._id}`}>
-                                                <button className="bg-black hover:bg-gray-600 text-white px-7 py-4 rounded-md transition-colors duration-200">
-                                                    View Job Details
-                                                </button>
-                                            </Link>
+                                            <div className="flex items-center space-x-2">
+                                                <Link href={`/joblists/jobdetails-hire-manager/${job._id}`}>
+                                                    <button className="bg-black hover:bg-gray-600 text-white px-7 py-4 rounded-md transition-colors duration-200">
+                                                        View Job Details
+                                                    </button>
+                                                </Link>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))
-                        )}
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -380,113 +365,133 @@ export default function JobListsPage() {
     console.log("Rendering candidate view for role:", role);
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 max-w-full">
-            < Navbar />
-            <div className="max-w-full px-9 py-4 flex-1">
-                <div className="flex flex-col items-center justify-between mb-8">                
-                    <h1 className="flex items-center space-x-2 bg-black hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors duration-200">
-                        <div className="font-semibold">My Applied Jobs</div>
-                    </h1>
-                </div>
-
-                <div className='rounded-lg border p-4 mb-6 bg-white'>
-                    <div className='flex items-center space-x-4'>
-                        <span className='font-medium text-gray-700'>Filter Applications:</span>
-                        <div className='flex space-x-2'>
+            <Navbar />
+            <div className="max-w-full px-9 py-4 flex-1 flex gap-6">
+                {/* Sidebar */}
+                    <div className="w-64 flex-shrink-0 bg-gray-800 rounded-lg shadow-md p-4">
+                        <h2 className="text-lg font-semibold mb-4 text-white text-center border-b rounded-lg">Filter Applications</h2>
+                        <div className="space-y-2">
                             <button
-                               onClick={() => setApplicationFilter("all")}
-                               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${applicationFilter === "all" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                onClick={() => setApplicationFilter("all")}
+                                className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                                    applicationFilter === "all" 
+                                        ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600" 
+                                        : "text-white hover:bg-gray-600"
+                                }`}
                             >
                                 All Applications ({applications.length})
                             </button>
                             <button
-                               onClick={() => setApplicationFilter("pending")}
-                               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${applicationFilter === "pending" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                onClick={() => setApplicationFilter("in-progress")}
+                                className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                                    applicationFilter === "in-progress" 
+                                        ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600" 
+                                        : "text-white hover:bg-gray-600"
+                                }`}
+                            >
+                                In Progress
+                            </button>
+                            <button
+                                onClick={() => setApplicationFilter("pending")}
+                                className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                                    applicationFilter === "pending" 
+                                        ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600" 
+                                        : "text-white hover:bg-gray-600"
+                                }`}
                             >
                                 Pending
                             </button>
                             <button
-                               onClick={() => setApplicationFilter("selected")}
-                               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${applicationFilter === "selected" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-                            >
-                                Selected
-                            </button>
-                            <button
-                               onClick={() => setApplicationFilter("rejected")}
-                               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${applicationFilter === "rejected" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                onClick={() => setApplicationFilter("rejected")}
+                                className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                                    applicationFilter === "rejected" 
+                                        ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600" 
+                                        : "text-white hover:bg-gray-600"
+                                }`}
                             >
                                 Rejected
                             </button>
                             <button
-                               onClick={() => setApplicationFilter("in-progress")}
-                               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${applicationFilter === "in-progress" ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                onClick={() => setApplicationFilter("selected")}
+                                className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                                    applicationFilter === "selected" 
+                                        ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600" 
+                                        : "text-white hover:bg-gray-600"
+                                }`}
                             >
-                                In Progress
+                                Selected
                             </button>
                         </div>
                     </div>
-                </div>
-                
-                <div className="space-y-4">
-                    {applications.length === 0 ? (
-                        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                            <div className="text-gray-400 mb-4">
-                                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
+
+                {/* Main Content */}
+                <div className="flex-1">
+                    <div className="mb-6">
+                        <h1 className="text-2xl font-bold text-gray-800">My Applied Jobs</h1>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        {applications.length === 0 ? (
+                            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                                <div className="text-gray-400 mb-4">
+                                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <p className="text-gray-600 text-lg mb-4">No job applications yet.</p>
+                                <p className="text-gray-500 mb-6">Start applying to jobs to see your applications here.</p>
+                                <Link href="/" className="inline-block bg-black text-white px-6 py-2 rounded-md hover:bg-gray-600 transition-colors">
+                                    Browse Jobs
+                                </Link>
                             </div>
-                            <p className="text-gray-600 text-lg mb-4">No job applications yet.</p>
-                            <p className="text-gray-500 mb-6">Start applying to jobs to see your applications here.</p>
-                            <Link href="/" className="inline-block bg-black text-white px-6 py-2 rounded-md hover:bg-gray-600 transition-colors">
-                                Browse Jobs
-                            </Link>
-                        </div>
-                    ) : (
-                        filteredApplications.map((application, index) => (
-                            <div 
-                                key={application._id} 
-                                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-4 border border-gray-200"
-                            >
-                                <div className="flex items-center justify-between">
-                                    {/* Left side - Job info */}
-                                    <div className="flex-1">
-                                        <div className="bg-gray-800 text-white rounded-lg px-6 py-4 inline-block min-w-[400px]">
-                                            <div className="flex items-center space-x-5">
-                                                <div className="bg-white text-gray-800 rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                                                    {index + 1}
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-lg font-semibold">{application.jobId.jobTitle}</h3>
-                                                    <div className="text-sm text-gray-300 mt-1 flex gap-7">
-                                                        <span>{application.jobId.companyName}</span> 
-                                                        <span>{application.jobId.location}</span>
+                        ) : (
+                            filteredApplications.map((application, index) => (
+                                <div 
+                                    key={application._id} 
+                                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-4 border border-gray-200"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        {/* Left side - Job info */}
+                                        <div className="flex-1">
+                                            <div className="bg-gray-800 text-white rounded-lg px-6 py-4 inline-block min-w-[400px]">
+                                                <div className="flex items-center space-x-5">
+                                                    <div className="bg-white text-gray-800 rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                                                        {index + 1}
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-lg font-semibold">{application.jobId.jobTitle}</h3>
+                                                        <div className="text-sm text-gray-300 mt-1 flex gap-7">
+                                                            <span>{application.jobId.companyName}</span> 
+                                                            <span>{application.jobId.location}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        
-                                        {/* Application details */}
-                                        <div className="mt-3 ml-2 flex items-center space-x-4">
-                                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(getOverallApplicationStatus(application))}`}>
-                                                {getOverallApplicationStatus(application).charAt(0).toUpperCase() + getOverallApplicationStatus(application).slice(1)}
+                                            
+                                            {/* Application details */}
+                                            <div className="mt-3 ml-2 flex items-center space-x-4">
+                                                <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(getOverallApplicationStatus(application))}`}>
+                                                    {getOverallApplicationStatus(application).charAt(0).toUpperCase() + getOverallApplicationStatus(application).slice(1)}
+                                                </div>
+                                                <span className="text-sm text-gray-500">
+                                                    Applied on {formatDate(application.submittedAt)}
+                                                </span>
                                             </div>
-                                            <span className="text-sm text-gray-500">
-                                                Applied on {formatDate(application.submittedAt)}
-                                            </span>
                                         </div>
-                                    </div>
 
-                                    {/* Right side - Actions */}
-                                    <div className="flex items-center space-x-2">
-                                        <Link href={`/joblists/jobdetails-candidate/${application._id}`}>
-                                            <button className="bg-black hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors duration-200 text-sm">
-                                                View Application
-                                            </button>
-                                        </Link>
+                                        {/* Right side - Actions */}
+                                        <div className="flex items-center space-x-2">
+                                            <Link href={`/joblists/jobdetails-candidate/${application._id}`}>
+                                                <button className="bg-black hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors duration-200 text-sm">
+                                                    View Application
+                                                </button>
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
-                    )}
+                            ))
+                        )}
+                    </div>
                 </div>
             </div>
 

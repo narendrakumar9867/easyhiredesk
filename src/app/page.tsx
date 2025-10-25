@@ -124,7 +124,7 @@ function Hero({
 }) {
   return (
     <section className="mx-auto flex max-w-6xl flex-col-reverse gap-24 px-4 pb-12 transition-all md:flex-row md:gap-4">
-      <div className="flex flex-col items-center gap-6 pt-8 text-center md:w-1/2 md:items-start md:gap-10 md:pt-48 md:text-left">
+      <div className="flex flex-col items-center gap-6 pt-8 text-center md:w-1/2 md:items-start md:gap-10 md:pt-36 md:text-left">
         <h1 className="text-4xl font-semibold md:text-6xl">
           <Balancer>Hire the best talent in tech, fast.</Balancer>
         </h1>
@@ -135,8 +135,13 @@ function Hero({
 
         {button}
 
-        <div className="flex gap-2 md:gap-6">
-          <h4>Add the sponsors names</h4>
+        <div className="flex flex-col text-center items-center gap-2 md:gap-3">
+          <h4 className="text-gray-700 text-sm md:text-base font-medium">
+            <span className="font-semibold text-gray-900">Sponsors:</span> Sunrise Innovations, SilverOak Solutions, Northgate Ventures, etc.
+          </h4>
+          <p className="text-xs md:text-sm text-gray-500 max-w-2xl">
+            Sponsor names shown in this project are fictional and used for demonstration purposes only. They do not represent real organizations or endorsements.
+          </p>
         </div>
       </div>
 

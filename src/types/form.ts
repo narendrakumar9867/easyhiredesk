@@ -1,3 +1,5 @@
+import { JobInfo } from "./Job"; 
+
 export interface FormConfig {
   job: JobInfo;
   formFields: FormField[];
@@ -12,11 +14,22 @@ export interface FormField {
   options?: string[];
 }
 
-export interface JobInfo {
-  title: string;
-  company: string;
-  location: string;
-  companyWebsite: string;
-  socialLinks: Array<{platform: string; url: string}>;
-  aboutJob: string;
+export interface FormResponse {
+  _id: string;
+  candidateName: string;
+  candidateEmail: string;
+  responses: {
+    fieldLabel: string;
+    fieldType: string;
+    value: any;
+  }[];
+  status: 'pending' | 'selected' | 'rejected';
+  submittedAt: string;
+  notes?: string;
+  roundStatuses?: {
+    round: number;
+    status: 'pending' | 'selected' | 'rejected';
+    notes?: string;
+  }[];
 }
+

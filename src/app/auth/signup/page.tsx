@@ -2,7 +2,7 @@
 import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/src/hooks/useAuth";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import Image from "next/image";
 
 interface FormData {
@@ -27,7 +27,7 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
   });
 
   const { signup, isSigningUp } = useAuth();
-  const supabase = createClientComponentClient();
+  // const supabase = createClientComponentClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
@@ -56,31 +56,31 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
     return domainName.length > 0 && topLevelDomain.length > 0;
   }
 
-  const handleGoogleSignup = async () => {
-    setLoading(true);
-    setError("");
-    setSuccess("");
+  // const handleGoogleSignup = async () => {
+  //   setLoading(true);
+  //   setError("");
+  //   setSuccess("");
 
-    try {
-      const currentUrl = new URL(window.location.href);
-      const cleanUrl = `${currentUrl.origin}${currentUrl.pathname}`;
+  //   try {
+  //     const currentUrl = new URL(window.location.href);
+  //     const cleanUrl = `${currentUrl.origin}${currentUrl.pathname}`;
 
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: cleanUrl
-        }
-      });
+  //     const { error } = await supabase.auth.signInWithOAuth({
+  //       provider: 'google',
+  //       options: {
+  //         redirectTo: cleanUrl
+  //       }
+  //     });
 
-      if (error) {
-        setError(error.message);
-      }
-    } catch {
-      setError("An unexpected error occurred");
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     if (error) {
+  //       setError(error.message);
+  //     }
+  //   } catch {
+  //     setError("An unexpected error occurred");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const validateForm = useCallback((): boolean => {
     if(!formData.role) {
@@ -189,7 +189,7 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
 
           <p className="flex flex-col items-center">or</p>
 
-          <div className="mt-4">
+          {/* <div className="mt-4">
             <button
             type="button"
             onClick={handleGoogleSignup}
@@ -205,7 +205,7 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
               />
               Sign Up with Google
             </button>
-          </div>
+          </div> */}
         </form>
 
         <div className="mt-4 text-center">

@@ -4,10 +4,10 @@ import React from 'react'
 
 const aiAssistancePage = () => {
   return (
-    <div className='flex flex-col min-h-min bg-gradient-to-br bg-white'>
+    <div className='flex flex-col min-h-screen bg-gradient-to-br bg-white'>
         <Navbar />
 
-        <div className='flex max-w-full mx-auto py-12 px-6'>
+        <div className='flex-1 max-w-full mx-auto py-12 px-6'>
             <div className='relative'>
                 <div className='text-center mb-10'>
                     <h2 className='inline-block text-2xl font-bold mb-4 rounded-2xl border px-4 py-2'>
