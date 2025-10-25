@@ -187,7 +187,7 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
             {isSigningUp ? "Creating account..." : "Create Account"}
           </button>
 
-          <p className="flex flex-col items-center">or</p>
+          {/* <p className="flex flex-col items-center">or</p> */}
 
           {/* <div className="mt-4">
             <button

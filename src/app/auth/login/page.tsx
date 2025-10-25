@@ -162,7 +162,7 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
             {isLoggingIn ? "Logging In..." : "Log In"}
           </button>
 
-          <p className="flex flex-col items-center">or</p>
+          {/* <p className="flex flex-col items-center">or</p> */}
 
           {/* <div className="mt-4">
             <button

@@ -39,9 +39,12 @@ const contactPage = () => {
 
     return (
         <div className='flex flex-col min-h-screen bg-white'>
-            < Navbar />
 
-            <div className="flex-1 max-w-6xl mx-auto py-10 px-6">
+            <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+                < Navbar />
+            </div>
+
+            <div className="flex-1 max-w-6xl mx-auto py-10 px-6 pt-28">
                 <div className='text-center mb-4'>
                     <h1 className="inline-block text-2xl font-bold mb-4  text-gray-900 rounded-2xl border px-4 py-2">
                         Contact Us!

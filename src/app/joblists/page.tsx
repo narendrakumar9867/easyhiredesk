@@ -6,6 +6,7 @@ import { axiosInstance } from "@/src/utils/axios";
 import Navbar from '@/src/components/Navbar';
 import FooterLogin from '@/src/components/FooterLogin';
 import { Job, Application } from '@/src/types/Job';
+import { Check } from 'lucide-react';
 
 export default function JobListsPage() {
     const { authUser, token } = useAuth();
@@ -261,8 +262,46 @@ export default function JobListsPage() {
         console.log("Rendering hire manager view for role:", role);
         return (
             <div className="flex flex-col min-h-screen bg-gray-50 max-w-full">
-                <Navbar />
-                <div className="max-w-full px-9 py-4 flex-1 flex gap-6">
+                <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+                    < Navbar />
+                </div>
+
+                <div className='items-center text-center pt-28 pb-12 px-4'>
+                <h1 className='text-4xl md:text-5xl font-bold text-gray-900 mb-8'>
+                    Manage All Your Job Postings in One Place
+                </h1>
+                <p className='text-lg text-gray-600 max-w-3xl mx-auto mb-8'>
+                    Welcome to your job management. Here you can view, track, and manage all your posted positions effortlessly. Filter jobs by status, monitor jobs, and keep your hiring process organized.
+                </p>
+               
+                {/* Feature Highlights */}
+                <div className='bg-gradient-to-br bg-gray-200 rounded-xl p-6 max-w-4xl mx-auto'>
+                    <h3 className='text-xl font-semibold text-gray-800 mb-4'>Quick Overview</h3>
+                    <p className='text-gray-600 mb-4'>
+                    Get a complete overview of your recruitment pipeline. Track open positions actively receiving applications, review closed jobs, and manage your entire hiring workflow with ease.
+                    </p>
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-3 text-left'>
+                    <div className='flex items-start'>
+                        <Check className='w-5 h-5 text-black mr-2 mt-0.5 flex-shrink-0'/>
+                        <span className='text-sm text-gray-700'>View all your active job postings at a glance</span>
+                    </div>
+                    <div className='flex items-start'>
+                        <Check className='w-5 h-5 text-black mr-2 mt-0.5 flex-shrink-0'/>
+                        <span className='text-sm text-gray-700'>Filter between open and closed positions</span>
+                    </div>
+                    <div className='flex items-start'>
+                        <Check className='w-5 h-5 text-black mr-2 mt-0.5 flex-shrink-0'/>
+                        <span className='text-sm text-gray-700'>Access detailed candidate applications for each job</span>
+                    </div>
+                    <div className='flex items-start'>
+                        <Check className='w-5 h-5 text-black mr-2 mt-0.5 flex-shrink-0'/>
+                        <span className='text-sm text-gray-700'>Manage interview rounds and selection process</span>
+                    </div>
+                    </div>
+                </div>
+                </div>
+
+                <div className="max-w-full px-9 py-4 flex-1 flex gap-6 pt-4">
                     {/* Sidebar */}
                         <div className="w-64 flex-shrink-0 bg-gray-800 rounded-lg shadow-md p-4">
                             <h2 className="text-lg font-semibold mb-4 text-white text-center border-b rounded-lg">Filter Jobs</h2>
@@ -303,10 +342,10 @@ export default function JobListsPage() {
                     {/* Main Content */}
                     <div className="flex-1">
                         <div className="mb-6">
-                            <h1 className="text-2xl font-bold text-gray-800">My Posted Jobs</h1>
+                            <h1 className="text-2xl font-bold text-gray-800 text-center p-3 bg-gray-200 rounded-lg">My Posted Jobs</h1>
                         </div>
                         
-                        <div className="space-y-4">
+                        <div className="space-y-4 max-h-[calc(105vh-300px)] overflow-y-auto">
                             {jobs.length === 0 ? (
                                 <div className="bg-white rounded-lg shadow-md p-8 text-center">
                                     <p className="text-gray-600">No jobs posted yet.</p>
@@ -365,10 +404,12 @@ export default function JobListsPage() {
     console.log("Rendering candidate view for role:", role);
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 max-w-full">
-            <Navbar />
-            <div className="max-w-full px-9 py-4 flex-1 flex gap-6">
+            <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+                < Navbar />
+            </div>
+            <div className="max-w-full px-9 py-4 flex-1 flex gap-6 pt-28">
                 {/* Sidebar */}
-                    <div className="w-64 flex-shrink-0 bg-gray-800 rounded-lg shadow-md p-4">
+                <div className="w-64 flex-shrink-0 bg-gray-800 rounded-lg shadow-md p-4">
                         <h2 className="text-lg font-semibold mb-4 text-white text-center border-b rounded-lg">Filter Applications</h2>
                         <div className="space-y-2">
                             <button
@@ -422,7 +463,7 @@ export default function JobListsPage() {
                                 Selected
                             </button>
                         </div>
-                    </div>
+                </div>
 
                 {/* Main Content */}
                 <div className="flex-1">
@@ -430,7 +471,7 @@ export default function JobListsPage() {
                         <h1 className="text-2xl font-bold text-gray-800">My Applied Jobs</h1>
                     </div>
                     
-                    <div className="space-y-4">
+                    <div className="space-y-4 max-h-[calc(105vh-300px)] overflow-y-auto">
                         {applications.length === 0 ? (
                             <div className="bg-white rounded-lg shadow-md p-8 text-center">
                                 <div className="text-gray-400 mb-4">

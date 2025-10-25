@@ -556,9 +556,11 @@ const RoundPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+        < Navbar />
+      </div>
 
-      <div className="flex justify-center gap-8 border-gray-300 pb-2 pt-4">
+      <div className="flex justify-center gap-8 border-gray-300 pb-2 pt-28">
         {generateRounds().map((round) => (
           <div 
             key={round}

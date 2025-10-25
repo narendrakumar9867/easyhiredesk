@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/src/hooks/useAuth"
 import { ChangeEvent, useState } from "react";
-import { Camera, Mail } from "lucide-react";
+import { Camera, Mail, User } from "lucide-react";
 import Navbar from "@/src/components/Navbar";
 import FooterLogin from "@/src/components/FooterLogin";
 
@@ -33,9 +33,11 @@ export default function ProfilePage() {
 
     return(
         <div className="flex flex-col min-h-screen bg-white">
-            < Navbar />
+            <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+                < Navbar />
+            </div>
 
-            <div className="h-screen pt-20">
+            <div className="h-screen pt-28">
                 <div className="max-w-2xl mx-auto p-4 py-8">
                     <div className="bg-base-300 rounded-xl p-6 space-y-8">
                         <div className="text-center">
@@ -77,6 +79,14 @@ export default function ProfilePage() {
                                 Email Address
                             </div>
                             <p className="px-4 py-2.5 bg-base-200 rounded-lg border">{authUser?.email}</p>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <div className="text-sm text-zinc-400 flex items-center gap-2">
+                                <User className="w-4 h-4" />
+                                Role
+                            </div>
+                            <p className="px-4 py-2.5 bg-base-200 rounded-lg border">{authUser?.role}</p>
                         </div>
 
                         <div className="flex-1 text-center">

@@ -424,8 +424,10 @@ export default function CandidateJobDetailsPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 max-w-full">
-            < Navbar />
-            <div className="max-w-full px-9 py-3 flex-1">
+            <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+                < Navbar />
+            </div>
+            <div className="max-w-full px-9 py-3 flex-1 pt-28">
                 {/* Main Content */}
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-16">
                     {/* Left Sidebar - Application Progress */}
