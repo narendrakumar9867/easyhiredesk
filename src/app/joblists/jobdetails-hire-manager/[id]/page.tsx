@@ -9,6 +9,7 @@ import FooterLogin from '@/src/components/FooterLogin';
 import renderMakrdown from '@/src/components/MarkdownRenderer';
 import { FormResponse } from '@/src/types/form';
 import { Job, JobRounds } from '@/src/types/Job';
+import { Copy, FileText, Lock } from 'lucide-react';
 
 const JobDetailsHireManager: React.FC = () => {
   const params = useParams();
@@ -27,6 +28,7 @@ const JobDetailsHireManager: React.FC = () => {
   const [jobCloseTime, setJobCloseTime] = useState<string>("");
   const [isJobClosed, setIsJobClosed] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [candidateFilter, setCandidateFilter] = useState<"all" | "selected" | "pending" | "rejected">("all");
 
   // Fetch job details, rounds, and candidate responses
   useEffect(() => {
@@ -516,14 +518,25 @@ const JobDetailsHireManager: React.FC = () => {
 
   // Helper function to get candidates for a specific round
   const getCandidatesForRound = (round: number) => {
+    let candidates = [];
     if (round === 1) {
       // Round 1 shows all candidates
-      return candidateResponses;
+      candidates = candidateResponses;
     } else {
       // Other rounds show candidates selected from previous round
-      return candidateResponses.filter(candidate => {
+      candidates = candidateResponses.filter(candidate => {
         const prevRoundStatus = getRoundStatus(candidate, round - 1);
         return prevRoundStatus === 'selected';
+      });
+    }
+    
+    // Apply candidate filter
+    if (candidateFilter === "all") {
+      return candidates;
+    } else {
+      return candidates.filter(candidate => {
+        const status = getRoundStatus(candidate, round);
+        return status === candidateFilter;
       });
     }
   };
@@ -595,65 +608,132 @@ const JobDetailsHireManager: React.FC = () => {
             </div>
 
             {/* Application link */}
-            <div className="border-t mt-3"></div>
-            <div className="mt-6 p-4 bg-gray-50 border border-black rounded-lg">
-              <h4 className="text-lg font-semibold text-black mb-2">Application Link</h4>
-              <p className="text-black mb-3">
-                Share this link with candidates to apply for this position:
+            {/* <div className="border-t mt-3"></div> */}
+
+            <div className='mt-6 p-4 text-center items-center'>
+              <p className='text-black'>
+                Take your hiring beyond boundaries.
+                <br></br>
+                With this application link, candidates can apply from anywhere anytime.
+                Share it across platforms like LinkedIn, email, or social media.
+                <br></br>
+                Every application is tracked automatically in your EasyHireDesk workspace.
               </p>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={`${window.location.origin}/apply/${jobId}`}
-                  className="flex-1 px-3 py-2 border border-black rounded-md bg-white text-sm"
-                />
-                <button
-                  onClick={() => {
-                    const shareLink = `${window.location.origin}/apply/${jobId}`;
-                    navigator.clipboard.writeText(shareLink);
-                    alert('Application link copied to clipboard!');
-                  }}
-                  className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
-                >
-                  Copy
-                </button>
+            </div>
+
+            <div className="mt-6 bg-white p-6">
+              <div className="flex items-center justify-center mb-4">
+                <div className="bg-blue-100 rounded-full p-3 mr-3">
+                  <svg className="w-6 h-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <h4 className="text-xl font-bold text-gray-800">Application Link</h4>
+                  <p className="text-sm text-gray-600">Share this link to receive applications</p>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 mb-4 px-40">
+                <p className="text-gray-600 text-sm mb-3 text-center">
+                  Candidates can apply for this position using the link below
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      readOnly
+                      value={`${window.location.origin}/apply/${jobId}`}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-700 focus:outline-none focus:border-black transition-colors"
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <FileText className='w-4 h-4'/>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const shareLink = `${window.location.origin}/apply/${jobId}`;
+                      navigator.clipboard.writeText(shareLink);
+                      alert('Application link copied to clipboard!');
+                    }}
+                    className="bg-black text-white px-6 py-3 rounded-lg hover:bg-black transition-all font-semibold shadow-md hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
+                  >
+                    <Copy className='w-4 h-4'/>
+                    Copy
+                  </button>
+                </div>
               </div>
             </div>
 
+            <div className='mt-4 p-4 text-center items-center'>
+              <p className='text-black'>
+                Manage your jobs active lifecycle with full control.
+                <br></br>
+                Schedule an automatic close for smoother hiring workflows, or end it instantly when the position is filled.
+                <br></br>
+                Keep your listings updated and avoid confusion for candidates.
+                Smart scheduling helps maintain an organized and transparent recruitment process.
+              </p>
+            </div>
+
             {/* job closed  */}
-            <div className="mt-6 p-4 bg-gray-50 border border-black rounded-lg">
-              <h4 className="text-lg font-semibold text-black mb-2">Job Status</h4>
+            <div className="mt-6 p-4 bg-white rounded-lg px-40">
+              <h4 className="text-lg font-semibold text-black mb-2 text-center">Job Status</h4>
               
               {isJobClosed ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                      <p className="text-red-800 font-semibold">This job is closed</p>
+                <div className="bg-gray-200 rounded-xl p-6">
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="bg-white border rounded-full p-3 mr-3">
+                      <Lock className='w-4 h-4'/>
+                    </div>
+                    <div>
+                      <p className="text-black font-semibold">This job is closed</p>
                     </div>
                   </div>
-                  <p className="text-red-600 text-sm mb-4">
-                    {job?.closeDate ? 
-                      `Closed on: ${new Date(job.closeDate).toLocaleString()}` : 
-                      'This job has been manually closed.'
-                    }
-                  </p>
-                  <button
-                    onClick={handleReopenJob}
-                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                  >
-                    Reopen Job
-                  </button>
+                  
+                  <div className="bg-white border border-black rounded-lg p-4 mb-4">
+                    <div className="flex items-center justify-center text-gray-700">
+                      <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm">
+                        {job?.closeDate ? 
+                          `Closed on: ${new Date(job.closeDate).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'long', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}` : 
+                          'This job has been manually closed'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col items-center">
+                    <p className="text-gray-600 text-sm mb-4 text-center max-w-md">
+                      This job is currently not accepting applications. Click below to reopen and start receiving applications again.
+                    </p>
+                    <button
+                      onClick={handleReopenJob}
+                      className="bg-black text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-all font-semibold shadow-md hover:shadow-lg flex items-center"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                      </svg>
+                      Reopen Job
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <>
-                  <p className='text-black mb-3'>
+                <div className="bg-gray-200 rounded-xl p-4">
+                  <p className='text-black mb-3 text-center'>
                     Schedule when this job should automatically close or close it immediately.
                   </p>
                   
                   {/* Schedule Close Section */}
-                  <div className="mb-4 p-3 bg-white rounded-lg border">
+                  <div className="mb-4 p-3 bg-white rounded-lg items-center">
                     <h5 className="font-medium text-gray-800 mb-2">Schedule Automatic Close</h5>
                     <div className='flex items-center space-x-2 mb-3'>
                       <div>
@@ -692,55 +772,66 @@ const JobDetailsHireManager: React.FC = () => {
                   </div>
 
                   {/* Immediate Close Section */}
-                  <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-                    <h5 className="font-medium text-red-800 mb-2">Close Immediately</h5>
+                  <div className="p-3 bg-gray-200 rounded-lg">
+                    <h5 className="font-medium text-black mb-2">Close Immediately</h5>
                     <div className='flex items-center justify-between'>
-                      <p className="text-red-600 text-sm">
+                      <p className="text-black text-sm">
                         Close this job right now. This action cannot be undone.
                       </p>
                       <button
                         onClick={handleImmediateClose}
-                        className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                        className="bg-black text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
                       >
                         Close Now
                       </button>
                     </div>
                   </div>
-                </>
+                </div>
               )}
             </div>
 
+            <div className='mt-6 p-4 text-center items-center'>
+              <p className='text-black'>
+                This action is irreversible, please proceed with caution.
+                <br></br>
+                Deleting this job will remove all associated applications, interview rounds, and uploaded files permanently.
+                <br></br>
+                Once deleted, this data cannot be recovered.
+                Make sure you have backed up any important information before confirming deletion.
+              </p>
+            </div>
+
             {/* Delete Job Section */}
-            <div className="mt-6 p-4 bg-red-50 border-2 border-red-400 rounded-lg">
+            <div className="mt-8 p-4 bg-gray-200 rounded-lg">
               <div className="flex items-start mb-3">
-                <svg className="w-6 h-6 text-red-600 mr-2 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-6 h-6 text-black mr-2 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <div>
-                  <h4 className="text-lg font-semibold text-red-700 mb-1">Danger Zone</h4>
-                  <p className="text-red-800 text-sm font-medium">
+                  <h4 className="text-lg font-semibold text-black mb-1">Danger Zone</h4>
+                  <p className="text-black text-sm font-medium">
                     Once you delete this job, there is no going back. Please be certain.
                   </p>
                 </div>
               </div>
               
-              <div className="bg-white border border-red-300 rounded p-3 mb-3">
+              <div className="bg-white border border-black rounded p-3 mb-3">
                 <p className="text-gray-700 text-sm mb-2">This action will permanently delete:</p>
                 <ul className="text-sm text-gray-600 space-y-1 ml-4">
                   <li className="flex items-center">
-                    <span className="text-red-500 mr-2">•</span>
+                    <span className="text-black mr-2">•</span>
                     Job posting: <span className="font-semibold ml-1">{job?.jobTitle}</span>
                   </li>
                   <li className="flex items-center">
-                    <span className="text-red-500 mr-2">•</span>
+                    <span className="text-black mr-2">•</span>
                     {candidateResponses.length} candidate application(s)
                   </li>
                   <li className="flex items-center">
-                    <span className="text-red-500 mr-2">•</span>
+                    <span className="text-black mr-2">•</span>
                     {tabs.length - 1} interview round(s) and all round data
                   </li>
                   <li className="flex items-center">
-                    <span className="text-red-500 mr-2">•</span>
+                    <span className="text-black mr-2">•</span>
                     All uploaded files and documents
                   </li>
                 </ul>
@@ -749,7 +840,7 @@ const JobDetailsHireManager: React.FC = () => {
               <button
                 onClick={handleDeleteJob}
                 disabled={isDeleting}
-                className="w-full bg-red-600 text-white px-4 py-3 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold"
+                className="w-full bg-black text-white px-4 py-3 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold"
               >
                 {isDeleting ? (
                   <>
@@ -791,7 +882,7 @@ const JobDetailsHireManager: React.FC = () => {
                     </h3>
                     <p className="text-gray-600">
                       {roundNumber === 1 
-                        ? 'Review and select candidates who submitted their applications.'
+                        ? 'Review and select candidates who submitted their applications. Once a candidate is marked as Selected or Rejected, they cannot be moved back to Pending status for that round.'
                         : `Candidates who were selected from Round ${roundNumber - 1}.`
                       }
                     </p>
@@ -910,52 +1001,115 @@ const JobDetailsHireManager: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 max-w-full">
-      < Navbar />
-      <div className="max-w-full px-9 py-3 flex-1">
-        {/* Job Title Header */}
-        <div className="bg-white border border-black rounded-lg p-6 mb-8">
-          <h1 className="text-black text-2xl font-bold text-center">{job.jobTitle}</h1>
-        </div>
-
-        {/* Navigation Tabs - Dynamic based on selected rounds */}
-        {!loading && (
-          <div className="flex items-center justify-between mb-8 overflow-x-auto">
-            {tabs.map((tab, index) => (
-              <React.Fragment key={tab}>
-                <button
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-3 rounded-lg font-medium transition-all whitespace-nowrap ${
-                    activeTab === tab
-                      ? 'bg-white text-black'
-                      : 'bg-black text-white border border-gray-600 hover:bg-gray-700'
-                  }`}
-                >
-                  {tab.startsWith('Round ') ? (
-                    <>
-                      {tab}
-                      {roundTitles[parseInt(tab.split(' ')[1])] && (
-                        <> - {roundTitles[parseInt(tab.split(' ')[1])]}</>
-                      )}
-                    </>
-                  ) : (
-                    tab
-                  )}
-                </button>
-                {index < tabs.length - 1 && (
-                  <div className="flex-1 h-px bg-black mx-4 min-w-[20px]"></div>
-                )}
-              </React.Fragment>
-            ))}
+      <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+        < Navbar />
+      </div>
+      <div className="mx-auto w-full max-w px-9 py-3 flex-1 flex gap-6 pt-28">
+        {/* Main Content */}
+        <div className="flex-1">
+          {/* Job Title Header */}
+          <div className="bg-white border border-black rounded-lg p-6 mb-8">
+            <h1 className="text-black text-2xl font-bold text-center">{job.jobTitle}</h1>
           </div>
-        )}
 
-        {/* Tab Content */}
-        <div className="min-h-[400px]">
-          {renderTabContent()}
+          {/* Navigation Tabs - Dynamic based on selected rounds */}
+          {!loading && (
+            <div className="flex items-center justify-between mb-8 overflow-x-hidden">
+              {tabs.map((tab, index) => (
+                <React.Fragment key={tab}>
+                  <button
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-6 py-3 rounded-lg font-medium transition-all whitespace-nowrap ${
+                      activeTab === tab
+                        ? 'bg-white text-black'
+                        : 'bg-black text-white border border-gray-600 hover:bg-gray-700'
+                    }`}
+                  >
+                    {tab.startsWith('Round ') ? (
+                      <>
+                        {tab}
+                        {roundTitles[parseInt(tab.split(' ')[1])] && (
+                          <> - {roundTitles[parseInt(tab.split(' ')[1])]}</>
+                        )}
+                      </>
+                    ) : (
+                      tab
+                    )}
+                  </button>
+                  {index < tabs.length - 1 && (
+                    <div className="flex-1 h-px bg-black mx-4 min-w-[20px]"></div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          )}
+
+          {/* Sidebar and Content Layout */}
+          {activeTab.startsWith('Round ') ? (
+            <div className="flex gap-6">
+              {/* Left Sidebar - Filter Candidates */}
+              <div className="w-64 flex-shrink-0 bg-gray-800 rounded-lg shadow-md p-4 sticky top-4 self-start">
+                <h2 className="text-lg font-semibold mb-4 text-white text-center border-b rounded-lg">
+                  Filter Candidates
+                </h2>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setCandidateFilter("all")}
+                    className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                      candidateFilter === "all"
+                        ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600"
+                        : "text-white hover:bg-gray-600"
+                    }`}
+                  >
+                    All Candidates
+                  </button>
+                  <button
+                    onClick={() => setCandidateFilter("selected")}
+                    className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                      candidateFilter === "selected"
+                        ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600"
+                        : "text-white hover:bg-gray-600"
+                    }`}
+                  >
+                    Selected
+                  </button>
+                  <button
+                    onClick={() => setCandidateFilter("pending")}
+                    className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                      candidateFilter === "pending"
+                        ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600"
+                        : "text-white hover:bg-gray-600"
+                    }`}
+                  >
+                    Pending
+                  </button>
+                  <button
+                    onClick={() => setCandidateFilter("rejected")}
+                    className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                      candidateFilter === "rejected"
+                        ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600"
+                        : "text-white hover:bg-gray-600"
+                    }`}
+                  >
+                    Rejected
+                  </button>
+                </div>
+              </div>
+              
+              {/* Right Side - Tab Content */}
+              <div className="flex-1 max-h-[calc(100vh-300px)] overflow-y-auto">
+                {renderTabContent()}
+              </div>
+            </div>
+          ) : (
+            <div className="min-h-[400px]">
+              {renderTabContent()}
+            </div>
+          )}
         </div>
       </div>
 
-      < FooterLogin />
+      <FooterLogin />
     </div>
   );
 };

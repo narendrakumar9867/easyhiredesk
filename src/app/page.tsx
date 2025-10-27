@@ -57,60 +57,64 @@ export default function Home() {
 
   return (
     <div className="min-h-screen w-full bg-white">
-      <Navbar />
 
-      {/* Visitor Page */}
-      {!role && (
-        <Hero
-          button={null}
-          text="Get your team in sync, no matter your location. Streamline processes, create team rituals, and watch productivity soar."
-        />
-      )}
+      <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+        <Navbar />
+      </div>
+        {/* Visitor Page */}
+        <div className="pt-20">
+          {!role && (
+          <Hero
+            button={null}
+            text="Get your team in sync, no matter your location. Streamline processes, create team rituals, and watch productivity soar."
+          />
+        )}
 
-      {/* Hire Manager Page */}
-      {role === "hire_manager" && (
-        <Hero
-          button={
-            <div className="flex gap-4">
-              <Link href="/hireprocess">
-                <button className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90 mr-3">
-                  Hire Next Candidates
-                </button>
-              </Link>
-              <Link href="/joblists">
-                <button className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90">
-                  See Our Job Lists
-                </button>
-              </Link>
-            </div>
-          }
-          text="As a hiring manager, streamline hiring and manage your candidates."
-        />
-      )}
-
-      {/* Candidate Page */}
-      {role === "candidate" && (
-        <Hero
-          button={
-            <div className="flex gap-4">
+        {/* Hire Manager Page */}
+        {role === "hire_manager" && (
+          <Hero
+            button={
+              <div className="flex gap-4">
+                <Link href="/hireprocess">
+                  <button className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90 mr-3">
+                    Hire Next Candidates
+                  </button>
+                </Link>
                 <Link href="/joblists">
-                  <button className="border-balck w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90">
+                  <button className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90">
                     See Our Job Lists
                   </button>
                 </Link>
-                <Link href="/profile">
-                  <button className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90">
-                    Update Profile
-                  </button>
-                </Link>
-            </div>
-           
-          }
-          text="As a candidate, explore jobs tailored for you and apply instantly."
-        />
-      )}
+              </div>
+            }
+            text="As a hiring manager, streamline hiring and manage your candidates."
+          />
+        )}
 
-      <Footer />
+        {/* Candidate Page */}
+        {role === "candidate" && (
+          <Hero
+            button={
+              <div className="flex gap-4">
+                  <Link href="/joblists">
+                    <button className="border-balck w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90">
+                      See Our Job Lists
+                    </button>
+                  </Link>
+                  <Link href="/profile">
+                    <button className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90">
+                      Update Profile
+                    </button>
+                  </Link>
+              </div>
+            
+            }
+            text="As a candidate, explore jobs tailored for you and apply instantly."
+          />
+        )}
+
+        <Footer />
+      </div> 
     </div>
   );
 }

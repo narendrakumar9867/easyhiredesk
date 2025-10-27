@@ -88,8 +88,12 @@ export default function JobDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br bg-white">
-        <Navbar />
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+          < Navbar />
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-28">
             <div className="text-center mb-12">
             <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
                 Add Your <span className="bg-gradient-to-r text-gray-400 bg-clip-text ">Job Details</span>

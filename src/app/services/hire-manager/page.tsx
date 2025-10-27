@@ -77,9 +77,11 @@ const HireManagerPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br bg-white">
-      < Navbar />
+      <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+        < Navbar />
+      </div>
 
-      <div className="flex-1 max-w-full mx-auto py-12 px-6">
+      <div className="flex-1 max-w-full mx-auto py-12 px-6 pt-28">
         <div className="text-center mb-16">
           <h1 className="inline-block text-2xl font-bold mb-4 rounded-2xl border px-4 py-2">
             Hire Manager Process

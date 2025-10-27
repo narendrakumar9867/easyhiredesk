@@ -11,6 +11,7 @@ import { FaUser } from 'react-icons/fa';
 import Login from '../app/auth/login/page';
 import Signup from '../app/auth/signup/page';
 import { useAuth } from '@/src/hooks/useAuth';
+import { LogOut, User } from 'lucide-react';
 
 type NavItem = {
     label: string;
@@ -64,7 +65,7 @@ export default function Navbar() {
     const [showSingUp, setshowSingUp] = useState(false);
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     
-    const { authUser } = useAuth();
+    const { authUser, logout } = useAuth();
 
     function toggleSideMenu() {
         setSideMenuOpen(!isSideMenuOpen);
@@ -74,9 +75,13 @@ export default function Navbar() {
         setSideMenuOpen(false);
     }
 
+    function handleLogout() {
+        logout();
+    }
+
     return(
         <nav>
-            <div className="mx-auto flex w-full max-w justify-between px-3 py-5 text-sm border-b rounded-lg">
+            <div className="mx-auto flex w-full max-w justify-between px-3 py-3 text-sm rounded-lg">
                 <h1 className="py-1 md:py-0 px-5 text-4xl font-extrabold tracking-wide bg-gradient-to-r bg-clip-text text-black drop-shadow-md">
                     Easyhire<span className="text-gray-400">Desk</span>
                 </h1>
@@ -147,19 +152,30 @@ export default function Navbar() {
                             </button>
 
                             {showProfileDropdown && (
-                                <div className="absolute right-0 top-12 w-48 bg-white rounded-lg shadow-lg border py-2 z-50">
-                                    <div className="px-4 py-2 border-b">
-                                        <p className="text-sm font-medium text-gray-900 truncate">{authUser.email}</p>
-                                        <p className="text-xs text-gray-500 capitalize">{authUser.role}</p>
-                                    </div>
-                                    
-                                    <Link
-                                        href="/profile"
-                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                        onClick={() => setShowProfileDropdown(false)}
-                                    >
-                                        Profile
-                                    </Link>
+                                <div className="absolute right-0 top-12 w-40 bg-white rounded-lg shadow-lg py-2 z-50">
+
+                                        <Link
+                                            href="/profile"
+                                            className="block px-6 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                                            onClick={() => setShowProfileDropdown(false)}
+                                        >
+                                            <div className='flex text-sm items-center gap-5'>
+                                                My Account <User className='w-4 h-4'/>
+                                            </div>
+                                        </Link>
+
+                                        <Link
+                                            href="/"
+                                            className="block px-6 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                                            onClick={() => {
+                                                setShowProfileDropdown(false);
+                                                handleLogout();
+                                            }}
+                                        >
+                                            <div className='flex text-sm items-center gap-13'>
+                                                Logout <LogOut className='w-4 h-4'/>
+                                            </div>
+                                        </Link>
                                 </div>
                             )}
                         </div>
@@ -267,10 +283,6 @@ function MobileSideMenu({ closeSideMenu }: { closeSideMenu: () => void}) {
                         </>
                     ) : (
                         <div className="flex flex-col gap-3 w-full">
-                            <div className="text-center border-b pb-3">
-                                <p className="font-medium text-gray-900">{authUser.email}</p>
-                                <p className="text-sm text-gray-500 capitalize">{authUser.role}</p>
-                            </div>
                             
                             <Link
                                 href="/profile"
