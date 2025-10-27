@@ -128,7 +128,7 @@ function Hero({
 }) {
   return (
     <section className="mx-auto flex max-w-6xl flex-col-reverse gap-24 px-4 pb-12 transition-all md:flex-row md:gap-4">
-      <div className="flex flex-col items-center gap-6 pt-8 text-center md:w-1/2 md:items-start md:gap-10 md:pt-36 md:text-left">
+      <div className="flex flex-col items-center gap-6 pt-8 text-center md:w-1/2 md:items-start md:gap-10 md:pt-32 md:text-left">
         <h1 className="text-4xl font-semibold md:text-6xl">
           <Balancer>Hire the best talent in tech, fast.</Balancer>
         </h1>

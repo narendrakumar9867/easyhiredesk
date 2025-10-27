@@ -2,13 +2,15 @@
 import RenderField from "./FormFields/RenderField"
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CheckCircle } from "lucide-react";
+import { ArrowBigUp, CheckCircle, Loader2, X } from "lucide-react";
 import axios from 'axios';
 import LoginPage from "../app/auth/login/page";
 import SignUpPage from "../app/auth/signup/page";
 import { useAuth } from "@/src/hooks/useAuth";
 import { FormConfig, FormField } from "../types/form";
 import renderMakrdown from "./MarkdownRenderer";
+import ReCAPTCHA from "react-google-recaptcha";
+import toast from "react-hot-toast";
 
 const PublicJobApplicationForm = () => {
   const params = useParams();
@@ -22,8 +24,10 @@ const PublicJobApplicationForm = () => {
   const [error, setError] = useState<string | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [applicationSubmitted, setApplicationSubmitted] = useState(false);
+  const [captchaValue, setCaptchaValue] = useState<string | null>(null);
 
   // Check if user is authenticated
   useEffect(() => {
@@ -81,38 +85,52 @@ const PublicJobApplicationForm = () => {
   }, [jobId]);
 
   // Check if user already submitted
-useEffect(() => {
-  const checkExistingSubmission = async () => {
-    if (!token || !jobId || !authUser) return;
+  useEffect(() => {
+    const checkExistingSubmission = async () => {
+      if (!token || !jobId || !authUser) return;
 
-    try {
-      const response = await axios.get(
-        `http://localhost:5000/api/form/my-submission/${jobId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/form/my-submission/${jobId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+        
+        if (response.data.success) {
+          setAlreadySubmitted(true);
         }
-      );
-      
-      if (response.data.success) {
-        setAlreadySubmitted(true);
+      } catch (error: any) {
+        // 401 means user needs to authenticate with your backend
+        // 404 means no submission found - this is expected
+        if (error.response?.status === 401) {
+          console.log("User needs backend authentication for submission check");
+        }
+        setAlreadySubmitted(false);
       }
-    } catch (error: any) {
-      // 401 means user needs to authenticate with your backend
-      // 404 means no submission found - this is expected
-      if (error.response?.status === 401) {
-        console.log("User needs backend authentication for submission check");
-      }
-      setAlreadySubmitted(false);
-    }
-  };
+    };
 
-  if (authUser && token) {
-    checkExistingSubmission();
-  }
-}, [authUser, token, jobId]);
+    if (authUser && token) {
+      checkExistingSubmission();
+    }
+  }, [authUser, token, jobId]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if(!captchaValue) {
+      toast.error("Please complete the CAPTCHA");
+      return;
+    }
     
     if (!authUser) {
       setShowLogin(true);
@@ -219,23 +237,39 @@ useEffect(() => {
     setShowLogin(true);
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-xl text-gray-600">Loading application form...</div>
       </div>
     );
-  }
+  };
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-xl text-red-600 mb-4">{error}</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="mb-6">
+            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+              <X className="w-8 h-8 text-red-600"/>
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Application Closed</h2>
+          <p className="text-gray-600 text-lg mb-6">{error}</p>
+          <button
+            onClick={() => router.push("/")}
+            className="bg-black text-white px-6 py-2.5 rounded-md hover:bg-gray-800 transition-colors font-medium"
+          >
+            Browse Other Opportunities
+          </button>
         </div>
       </div>
     );
-  }
+  };
 
   if (alreadySubmitted) {
     return (
@@ -258,7 +292,7 @@ useEffect(() => {
         </div>
       </div>
     );
-  }
+  };
 
   if (applicationSubmitted) {
     return (
@@ -283,7 +317,7 @@ useEffect(() => {
         </div>
       </div>
     );
-  }
+  };
 
   if (!formConfig) {
     return (
@@ -291,13 +325,16 @@ useEffect(() => {
         <div className="text-xl text-gray-600">Form configuration not found</div>
       </div>
     );
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-full mx-auto px-4">
+    <div className="min-h-screen bg-gray-200 py-8">
+      <div className="bg-white max-w-4xl mx-auto rounded-lg px-4">
+        <div className="p-6 text-xl text-center mb-4 pt-12 border-b border-gray-200">
+          Candidate Registration Form
+        </div>
         {/* Header */}
-        <div className="bg-white rounded-lg p-6 mb-6">
+        <div className="p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {formConfig.job.title}
           </h1>
@@ -365,7 +402,7 @@ useEffect(() => {
         </div>
 
         {/* Application Form */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="p-6 border-b border-gray-200">
           <form onSubmit={handleSubmit} className="space-y-6">
             {formConfig.formFields.map((field, index) => (
               <div key={index}>
@@ -409,16 +446,46 @@ useEffect(() => {
                 </div>
               </div>
             ) : (
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full bg-black text-white py-3 rounded-lg hover:bg-white hover:text-black border transition-colors disabled:bg-gray-400"
-              >
-                {submitting ? 'Submitting Application...' : 'Submit Application'}
-              </button>
+              <div className="pt-10">
+                <div className="flex justify-center mb-8">
+                  {/* do not use this site key in production */}
+                  <ReCAPTCHA
+                    sitekey={process.env.NEXT_PUBLIC_SITE_KEY_RECAPTCHA!}
+                    onChange={(value) => setCaptchaValue(value)}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-30 mx-auto block bg-black text-white py-3 px-6 rounded-full hover:bg-gray-800 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg"
+                >
+                  {submitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="animate-spin h-5 w-5"/>
+                      Submitting...
+                    </span>
+                  ) : (
+                    'Submit'
+                  )}
+                </button>
+              </div>
             )}
           </form>
         </div>
+
+        <div className="p-6 pt-10 text-sm text-center">
+          Powered by EasyhireDesk
+        </div>
+
+        {showScrollTop && (
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-8 right-8 bg-black text-white p-3 rounded-full shadow-lg duration-300 z-50"
+            aria-label="Scroll to top"
+          >
+            <ArrowBigUp className="w-6 h-6"/>
+          </button>
+        )}
       </div>
 
       {/* Login Modal */}

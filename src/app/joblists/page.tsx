@@ -13,6 +13,7 @@ export default function JobListsPage() {
     const role = authUser?.role;
     const [jobs, setJobs] = useState<Job[]>([]);
     const [applications, setApplications] = useState<Application[]>([]);
+    const [applicationCounts, setApplicationCounts] = useState<{[key: string]: number}>({});
     const [loading, setLoading] = useState(true);
     const [jobFilter, setJobFilter] = useState<"all" | "open" | "closed">("all");
     const [applicationFilter, setApplicationFilter] = useState<"all" | "selected" | "pending" | "rejected" | "in-progress">("all"); 
@@ -99,6 +100,34 @@ export default function JobListsPage() {
         console.log("Token:", token ? "Present" : "Not present");
     }, [role, token]);
 
+    // Fetch application counts for each job
+    useEffect(() => {
+        const fetchApplicationCounts = async () => {
+            if (!token || role !== 'hire_manager' || jobs.length === 0) return;
+            
+            try {
+                const counts: {[key: string]: number} = {};
+                
+                for (const job of jobs) {
+                    const response = await axiosInstance.get(
+                        `/form/responses/${job._id}`,
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    
+                    if (response.data && response.data.data) {
+                        counts[job._id] = response.data.data.responses?.length || 0;
+                    }
+                }
+                
+                setApplicationCounts(counts);
+            } catch (error) {
+                console.error("Error fetching application counts:", error);
+            }
+        };
+
+        fetchApplicationCounts();
+    }, [jobs, token, role]);
+
     const getStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
             case 'pending':
@@ -138,7 +167,7 @@ export default function JobListsPage() {
             
             application.roundStatuses.forEach((roundStatus, index) => {
                 console.log(`Round ${roundStatus.round}:`, roundStatus.status);
-                if (roundStatus.status === "selected" || roundStatus.status === "completed") {
+                if (roundStatus.status === "selected") {
                     selectedCount++;
                 } else if (roundStatus.status === "rejected") {
                     rejectedCount++;
@@ -186,27 +215,6 @@ export default function JobListsPage() {
             default:
                 return "pending";
         }
-    };
-
-    const getRoundStatusForApplication = (application: Application, roundId: number) => {
-        if(roundId === 0) {
-            return "completed";
-        }
-
-        // Check if we have roundStatuses array
-        if(application.roundStatuses && Array.isArray(application.roundStatuses)) {
-            const roundStatus = application.roundStatuses.find(rs => rs.round === roundId);
-            if(roundStatus) {
-                return roundStatus.status;
-            }
-        }
-
-        // Fallback for round 1 to main status
-        if(roundId === 1) {
-            return application.status || "pending";
-        }
-
-        return "pending";
     };
 
     const formatDate = (dateString: string) => {
@@ -266,16 +274,16 @@ export default function JobListsPage() {
                     < Navbar />
                 </div>
 
-                <div className='items-center text-center pt-28 pb-12 px-4'>
-                <h1 className='text-4xl md:text-5xl font-bold text-gray-900 mb-8'>
-                    Manage All Your Job Postings in One Place
+                <div className='items-center text-center pt-32 pb-12 px-4 md-12'>
+                <h1 className='text-4xl md:text-5xl font-bold text-gray-900 mb-10 max-w-4xl mx-auto leading-snug'>
+                    Easily Manage, Track and Monitor All Your Job Posts in One Place
                 </h1>
-                <p className='text-lg text-gray-600 max-w-3xl mx-auto mb-8'>
-                    Welcome to your job management. Here you can view, track, and manage all your posted positions effortlessly. Filter jobs by status, monitor jobs, and keep your hiring process organized.
+                <p className='text-lg text-gray-600 max-w-5xl mx-auto mb-20 pt-6'>
+                    Welcome to your centralized job management dashboard. Effortlessly view, track, and organize all your job postings in one place. Filter by hiring status, review candidate applications, and monitor recruitment progress to keep your entire hiring process on track and efficient.
                 </p>
                
                 {/* Feature Highlights */}
-                <div className='bg-gradient-to-br bg-gray-200 rounded-xl p-6 max-w-4xl mx-auto'>
+                <div className='bg-gradient-to-br bg-gray-200 rounded-xl p-6 max-w-4xl mx-auto mb-10'>
                     <h3 className='text-xl font-semibold text-gray-800 mb-4'>Quick Overview</h3>
                     <p className='text-gray-600 mb-4'>
                     Get a complete overview of your recruitment pipeline. Track open positions actively receiving applications, review closed jobs, and manage your entire hiring workflow with ease.
@@ -303,9 +311,10 @@ export default function JobListsPage() {
 
                 <div className="max-w-full px-9 py-4 flex-1 flex gap-6 pt-4">
                     {/* Sidebar */}
-                        <div className="w-64 flex-shrink-0 bg-gray-800 rounded-lg shadow-md p-4">
-                            <h2 className="text-lg font-semibold mb-4 text-white text-center border-b rounded-lg">Filter Jobs</h2>
-                            <div className="space-y-2">
+                        <div className="w-64 flex-shrink-0 rounded-2xl shadow-lg p-5 bg-gray-800 text-gray-200">
+                            <h2 className="text-xl font-semibold mb-2 text-white text-center">Filter Jobs</h2>
+                            <p className='text-sm text-gray-400 text-center mb-6 pt-6'>Filter and manage jobs based on their current hiring status.</p>
+                            <div className="space-y-2 pt-4">
                                 <button
                                     onClick={() => setJobFilter("all")}
                                     className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
@@ -341,8 +350,9 @@ export default function JobListsPage() {
 
                     {/* Main Content */}
                     <div className="flex-1">
-                        <div className="mb-6">
-                            <h1 className="text-2xl font-bold text-gray-800 text-center p-3 bg-gray-200 rounded-lg">My Posted Jobs</h1>
+                        <div className="mb-6 text-gray-800 text-center p-3 bg-white max-w-3xl mx-auto">
+                            <h1 className="text-2xl font-bold py-4">My Posted Jobs</h1>
+                            <p>An overview of all your current and past job postings. Click View Job Details to explore applications, candidates, and interview rounds.</p>
                         </div>
                         
                         <div className="space-y-4 max-h-[calc(105vh-300px)] overflow-y-auto">
@@ -378,9 +388,20 @@ export default function JobListsPage() {
                                                 </div>
                                             </div>
 
+                                            <div className='flex items-center space-x-2 px-6'>
+                                                <div className='text-center'>
+                                                    <div className='text-2xl font-bold text-gray-800'>
+                                                        {applicationCounts[job._id] || 0}
+                                                    </div>
+                                                    <div className='text-sm text-gray-500'>
+                                                        Total Applications
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <div className="flex items-center space-x-2">
                                                 <Link href={`/joblists/jobdetails-hire-manager/${job._id}`}>
-                                                    <button className="bg-black hover:bg-gray-600 text-white px-7 py-4 rounded-md transition-colors duration-200">
+                                                    <button className="bg-black hover:bg-gray-600 text-white px-6 py-2 rounded-md transition-colors duration-200">
                                                         View Job Details
                                                     </button>
                                                 </Link>

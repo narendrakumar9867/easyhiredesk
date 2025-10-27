@@ -1,5 +1,6 @@
-import { FaInstagram, FaGithub, FaLinkedin } from "react-icons/fa";
+import { FaInstagram, FaGithub, FaLinkedin, FaDirections } from "react-icons/fa";
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 
 
 export default function Footer() {
@@ -15,14 +16,14 @@ export default function Footer() {
             This project helped to the freshers and hire coordinator with easy manage & processed eficient time to complete selection process.
           </p>
 
-          <Link href="about/" className="text-blue-600 mt-3 inline-block text-sm">
-            Learn more
+          <Link href="about/" className="flex font-semibold items-center text-blank mt-3 text-sm gap-1">
+            Learn more<ArrowUpRight className="w-4 h-4"/>
           </Link>
         </div>
 
-        <div className="md:px-40">
+        <div className=" md:px-40">
           <h3 className="font-semibold mb-3">Services</h3>
-          <ul className="space-y-2 text-sm text-gray-600">
+          <ul className="space-y-3 text-sm text-gray-600">
             <li><Link href="services/hire-manager">Hire Manager</Link></li>
             <li><Link href="services/candidates">Candidates</Link></li>
           </ul>
@@ -30,17 +31,15 @@ export default function Footer() {
 
         <div className="md:px-24">
           <h3 className="font-semibold mb-3">Features</h3>
-          <ul className="space-y-2 text-sm text-gray-600">
+          <ul className="space-y-3 text-sm text-gray-600">
             <li><Link href="features/ai-assistance">AI Assistance</Link></li>
           </ul>
         </div>
 
         <div className="md:px-">
-          <h3 className="font-semibold mb-3">Contact Us</h3>
-          <ul className="space-y-2 text-sm text-gray-600">
-            <li><Link href="contact/">Contact Number</Link></li>
-            <li><Link href="contact/">Mail</Link></li>
-          </ul>
+          <Link href="/contact">
+          <h3 className="flex font-semibold text-sm items-center gap-2 underline">Contact Us <ArrowUpRight className="w-4 h-4"/></h3>
+          </Link>
         </div>
       </div>
 
