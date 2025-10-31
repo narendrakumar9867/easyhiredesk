@@ -1,4 +1,4 @@
-import FooterLogin from '@/src/components/FooterLogin';
+import Footer from '@/src/components/Footer';
 import Navbar from '@/src/components/Navbar';
 import React from 'react'
 
@@ -51,7 +51,7 @@ const aiAssistancePage = () => {
             </div>
         </div>
 
-        <FooterLogin />
+        <Footer />
     </div>
   )
 }

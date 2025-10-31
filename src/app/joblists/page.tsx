@@ -283,7 +283,7 @@ export default function JobListsPage() {
                 </p>
                
                 {/* Feature Highlights */}
-                <div className='bg-gradient-to-br bg-gray-200 rounded-xl p-6 max-w-4xl mx-auto mb-10'>
+                <div className='bg-gradient-to-br bg-gray-50 border-2 border-gray-200 rounded-xl p-6 max-w-4xl mx-auto mb-10'>
                     <h3 className='text-xl font-semibold text-gray-800 mb-4'>Quick Overview</h3>
                     <p className='text-gray-600 mb-4'>
                     Get a complete overview of your recruitment pipeline. Track open positions actively receiving applications, review closed jobs, and manage your entire hiring workflow with ease.
@@ -311,16 +311,16 @@ export default function JobListsPage() {
 
                 <div className="max-w-full px-9 py-4 flex-1 flex gap-6 pt-4">
                     {/* Sidebar */}
-                        <div className="w-64 flex-shrink-0 rounded-2xl shadow-lg p-5 bg-gray-800 text-gray-200">
-                            <h2 className="text-xl font-semibold mb-2 text-white text-center">Filter Jobs</h2>
-                            <p className='text-sm text-gray-400 text-center mb-6 pt-6'>Filter and manage jobs based on their current hiring status.</p>
+                        <div className="w-64 flex-shrink-0 rounded-2xl shadow-lg p-5 bg-gray-100 text-black">
+                            <h2 className="text-xl font-semibold mb-2 text-black text-center">Filter Jobs</h2>
+                            <p className='text-sm text-gray-500 text-center mb-6 pt-6'>Filter and manage jobs based on their current hiring status.</p>
                             <div className="space-y-2 pt-4">
                                 <button
                                     onClick={() => setJobFilter("all")}
                                     className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
                                         jobFilter === "all" 
-                                            ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600" 
-                                            : "text-white hover:bg-gray-600"
+                                            ? "bg-white text-gray-800 border-l-4 border-blue-600" 
+                                            : "text-black hover:bg-gray-200"
                                     }`}
                                 >
                                     All Jobs ({jobs.length})
@@ -329,8 +329,8 @@ export default function JobListsPage() {
                                     onClick={() => setJobFilter("open")}
                                     className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
                                         jobFilter === "open" 
-                                            ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600" 
-                                            : "text-white hover:bg-gray-600"
+                                            ? "bg-white text-gray-800 border-l-4 border-blue-600" 
+                                            : "text-black hover:bg-gray-200"
                                     }`}
                                 >
                                     Open Jobs
@@ -339,8 +339,8 @@ export default function JobListsPage() {
                                     onClick={() => setJobFilter("closed")}
                                     className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
                                         jobFilter === "closed" 
-                                            ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600" 
-                                            : "text-white hover:bg-gray-600"
+                                            ? "bg-white text-gray-800 border-l-4 border-blue-600" 
+                                            : "text-black hover:bg-gray-200"
                                     }`}
                                 >
                                     Closed Jobs
@@ -372,14 +372,14 @@ export default function JobListsPage() {
                                         <div className="flex items-center justify-between">
                                             {/* Left side - Job info */}
                                             <div className="flex-1">
-                                                <div className="bg-gray-800 text-white rounded-lg px-6 py-4 inline-block min-w-[400px]">
+                                                <div className="bg-gray-200 text-black rounded-lg px-6 py-4 inline-block min-w-[400px]">
                                                     <div className="flex items-center space-x-5">
-                                                        <div className="bg-white text-gray-800 rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                                                        <div className="bg-white text-black rounded-full w-8 h-8 flex items-center justify-center">
                                                             {index + 1}
                                                         </div>
                                                         <div>
-                                                            <h3 className="text-lg font-semibold">{job.jobTitle}</h3>
-                                                            <div className="text-sm text-gray-300 mt-1 flex gap-7">
+                                                            <h3 className="text-lg">{job.jobTitle}</h3>
+                                                            <div className="text-black mt-1 flex gap-7">
                                                                 <span>{job.companyName}</span> 
                                                                 <span>{job.location}</span>
                                                             </div>
@@ -390,7 +390,7 @@ export default function JobListsPage() {
 
                                             <div className='flex items-center space-x-2 px-6'>
                                                 <div className='text-center'>
-                                                    <div className='text-2xl font-bold text-gray-800'>
+                                                    <div className='text-2xl font-normal text-gray-800'>
                                                         {applicationCounts[job._id] || 0}
                                                     </div>
                                                     <div className='text-sm text-gray-500'>
@@ -414,7 +414,85 @@ export default function JobListsPage() {
                     </div>
                 </div>
 
-                <div className="mt-auto">
+                <div className='mt-20 px-14'>
+                    <div className="mt-16 bg-gray-50 border border-gray-200 text-black rounded-xl p-12">
+                        <h2 className="text-2xl font-bold text-center mb-12">Your Hiring Journey in Numbers</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                            <div className="text-center">
+                            <div className="text-3xl font-bold mb-2">{(jobs.length)}</div>
+                            <div className="text-black">Total Job Posts</div>
+                            </div>
+                            <div className="text-center">
+                            <div className="text-3xl font-bold mb-2">
+                                {Object.values(applicationCounts).reduce((total, count) => total + count, 0)}
+                            </div>
+                            <div className="text-black">Applications Received</div>
+                            </div>
+                            <div className="text-center">
+                            <div className="text-3xl font-bold mb-2">100%</div>
+                            <div className="text-black">Response Rate</div>
+                            </div>
+                            <div className="text-center">
+                            <div className="text-3xl font-bold mb-2">24/7</div>
+                            <div className="text-black">Platform Availability</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mt-16 bg-gray-50 rounded-xl p-12 border-2 border-gray-200">
+                        <h2 className="text-3xl font-bold text-center mb-4">How EasyHireDesk Works</h2>
+                        <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
+                            Streamline your entire recruitment process in four simple steps
+                        </p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                            <div className="text-center">
+                            <div className="bg-black text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">1</div>
+                            <h3 className="font-bold text-lg mb-2">Post Your Job</h3>
+                            <p className="text-gray-600 text-sm">Create and publish job listings in minutes with our intuitive form builder</p>
+                            </div>
+                            
+                            <div className="text-center">
+                            <div className="bg-black text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">2</div>
+                            <h3 className="font-bold text-lg mb-2">Receive Applications</h3>
+                            <p className="text-gray-600 text-sm">Candidates apply directly through your custom application link</p>
+                            </div>
+                            
+                            <div className="text-center">
+                            <div className="bg-black text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">3</div>
+                            <h3 className="font-bold text-lg mb-2">Review & Select</h3>
+                            <p className="text-gray-600 text-sm">Manage multiple interview rounds and track candidate progress</p>
+                            </div>
+                            
+                            <div className="text-center">
+                            <div className="bg-black text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">4</div>
+                            <h3 className="font-bold text-lg mb-2">Hire The Best</h3>
+                            <p className="text-gray-600 text-sm">Make informed decisions with organized candidate data</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mt-16 bg-gray-50 border border-gray-200 text-black rounded-xl p-12 text-center">
+                        <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Hiring Process?</h2>
+                        <p className="text-black mb-8 max-w-2xl mx-auto">
+                            Join hundreds of companies already using EasyHireDesk to find their perfect candidates
+                        </p>
+                        <div className="flex gap-4 justify-center">
+                            <Link
+                                href="/hireprocess"
+                                className="bg-white text-black px-8 py-4 rounded-xl font-bold hover:bg-gray-100 transition-all transform hover:scale-105 border"
+                            >
+                                Create New Job Post
+                            </Link>
+                            <Link
+                                href="/about"
+                                className="bg-gray-800 text-white px-8 py-4 rounded-xl font-bold hover:bg-gray-700 transition-all border-2 border-gray-600"
+                            >
+                                Learn More
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-auto pt-12">
                     <FooterLogin />
                 </div>
             </div>  

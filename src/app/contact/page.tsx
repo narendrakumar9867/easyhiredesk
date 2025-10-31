@@ -4,7 +4,8 @@ import { Phone, Mail } from 'lucide-react';
 import emailjs from "@emailjs/browser";
 
 import Navbar from '@/src/components/Navbar';
-import FooterLogin from '@/src/components/FooterLogin';
+import FAQ from '@/src/sections/FAQ';
+import Footer from '@/src/components/Footer';
 
 const contactPage = () => {
     const form = useRef(null);
@@ -41,13 +42,17 @@ const contactPage = () => {
         <div className='flex flex-col min-h-screen bg-white'>
 
             <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
-                < Navbar />
+                <Navbar />
             </div>
 
             <div className="flex-1 max-w-6xl mx-auto py-10 px-6 pt-28">
                 <div className='text-center mb-4'>
-                    <h1 className="inline-block text-2xl font-bold mb-4  text-gray-900 rounded-2xl border px-4 py-2">
-                        Contact Us!
+                    <h1 className="inline-block mb-4 px-4 py-2">
+                        <img
+                            src="/images/contact-us.jpg"
+                            alt='contact page'
+                            className='w-60 h-20'
+                        />
                     </h1>
                 </div>
             
@@ -125,9 +130,13 @@ const contactPage = () => {
                     </form>
                     </div>
                 </div>
+
+                <div>
+                    <FAQ />
+                </div>
             </div>
 
-            < FooterLogin />
+            < Footer />
         </div>
     )
 }

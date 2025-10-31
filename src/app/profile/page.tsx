@@ -187,18 +187,6 @@ export default function ProfilePage() {
                             </div>
                             <p className="px-4 py-2.5 bg-base-200 rounded-lg border">{authUser?.role}</p>
                         </div>
-
-                        <div className="flex-1 text-center">
-                            <button
-                            onClick={() => {
-                                handleLogout();
-                                window.location.href = "/";
-                            }}
-                            className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90 mr-3"
-                            >
-                                Logout
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>

@@ -45,6 +45,10 @@ const navItems: NavItem[] = [
             {
                 label: "AI Assistance",
                 link: "/features/ai-assistance"
+            },
+            {
+                label: "Scheduled Interviews",
+                link: "/features/meeting"
             }
         ]
     },
