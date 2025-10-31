@@ -2,14 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import * as XLSX from 'xlsx';
 import axios from 'axios';
+import Image from "next/image";
 import { useAuth } from "@/src/hooks/useAuth";
 import Navbar from '@/src/components/Navbar';
 import FooterLogin from '@/src/components/FooterLogin';
 import renderMakrdown from '@/src/components/MarkdownRenderer';
 import { FormResponse } from '@/src/types/form';
 import { Job, JobRounds } from '@/src/types/Job';
-import { Copy, FileText, Lock } from 'lucide-react';
+import { Building2, ChevronLeft, Copy, FileDown, FileText, FileTextIcon, Link2, Lock, Radiation } from 'lucide-react';
 
 const JobDetailsHireManager: React.FC = () => {
   const params = useParams();
@@ -507,473 +509,591 @@ const JobDetailsHireManager: React.FC = () => {
     );
   };
 
-  const renderTabContent = () => {
-  // Helper function to get round-specific status
-  const getRoundStatus = (candidate: FormResponse, round: number): string => {
-    if (round === 1) return candidate.status; // Use main status for Round 1
-    
-    const roundStatus = candidate.roundStatuses?.find(rs => rs.round === round);
-    return roundStatus?.status || 'pending';
-  };
+  const exportToExcel = (roundNumber: number) => {
+    const getRoundStatus = (candidate: FormResponse, round: number): string => {
+      if (round === 1) return candidate.status;
+      const roundStatus = candidate.roundStatuses?.find(rs => rs.round === round);
+      return roundStatus?.status || 'pending';
+    };
 
-  // Helper function to get candidates for a specific round
-  const getCandidatesForRound = (round: number) => {
-    let candidates = [];
-    if (round === 1) {
-      // Round 1 shows all candidates
-      candidates = candidateResponses;
+    let candidatesToExport = [];
+    if (roundNumber === 1) {
+      candidatesToExport = candidateResponses;
     } else {
-      // Other rounds show candidates selected from previous round
-      candidates = candidateResponses.filter(candidate => {
-        const prevRoundStatus = getRoundStatus(candidate, round - 1);
+      candidatesToExport = candidateResponses.filter(candidate => {
+        const prevRoundStatus = getRoundStatus(candidate, roundNumber - 1);
         return prevRoundStatus === 'selected';
       });
     }
-    
-    // Apply candidate filter
-    if (candidateFilter === "all") {
-      return candidates;
-    } else {
-      return candidates.filter(candidate => {
-        const status = getRoundStatus(candidate, round);
-        return status === candidateFilter;
-      });
+
+    // Apply current filter
+    const filteredCandidates = candidatesToExport.filter(candidate => {
+      if (candidateFilter === "all") return true;
+      return getRoundStatus(candidate, roundNumber) === candidateFilter;
+    });
+
+    if (filteredCandidates.length === 0) {
+      alert('No candidates to export for this round!');
+      return;
     }
-  };
 
-  // Helper function to get status counts for a specific round
-  const getStatusCounts = (round: number, candidates: FormResponse[]) => {
-    const selected = candidates.filter(c => getRoundStatus(c, round) === 'selected').length;
-    const rejected = candidates.filter(c => getRoundStatus(c, round) === 'rejected').length;
-    const pending = candidates.filter(c => getRoundStatus(c, round) === 'pending').length;
-    
-    return { selected, rejected, pending };
-  };
+    // Get all unique field labels dynamically from responses
+    const allFieldLabels = new Set<string>();
+    filteredCandidates.forEach(candidate => {
+      candidate.responses.forEach(response => {
+        if (response.fieldType !== 'file') { // Skip file fields
+          allFieldLabels.add(response.fieldLabel);
+        }
+      });
+    });
 
-  try {
-    switch (activeTab) {
-      case 'Job details':
-        return (
-          <div className="bg-white rounded-lg p-6 mb-6">
-            <div className="mb-6">
-              <h3 className="text-black text-lg font-semibold mb-4">Company Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 border rounded-lg p-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Company Name</p>
-                  <p className="text-black font-semibold">{job?.companyName}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Location</p>
-                  <p className="text-black">{job?.location}</p>
-                </div>
-                {job?.companyWebsite && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Website</p>
-                    <a 
-                      href={job.companyWebsite} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      {job.companyWebsite}
-                    </a>
-                  </div>
-                )}
-                {job?.socialLinks && job.socialLinks.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Social Links</p>
-                    <div className="flex space-x-2">
-                      {job.socialLinks.map((link, index) => (
-                        <a 
-                          key={index}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline capitalize"
-                        >
-                          {link.platform}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-black text-lg font-semibold mb-4">Job Description</h3>
-              <div className="prose prose-blue max-w-none border rounded-lg p-6">
-                {renderMakrdown(job?.aboutJob || "")}
-              </div>
-            </div>
+    // Prepare data for Excel with dynamic columns
+    const excelData = filteredCandidates.map(candidate => {
+      const status = getRoundStatus(candidate, roundNumber);
+      const rowData: { [key: string]: any } = {};
 
-            {/* Application link */}
-            {/* <div className="border-t mt-3"></div> */}
-
-            <div className='mt-6 p-4 text-center items-center'>
-              <p className='text-black'>
-                Take your hiring beyond boundaries.
-                <br></br>
-                With this application link, candidates can apply from anywhere anytime.
-                Share it across platforms like LinkedIn, email, or social media.
-                <br></br>
-                Every application is tracked automatically in your EasyHireDesk workspace.
-              </p>
-            </div>
-
-            <div className="mt-6 bg-white p-6">
-              <div className="flex items-center justify-center mb-4">
-                <div className="bg-blue-100 rounded-full p-3 mr-3">
-                  <svg className="w-6 h-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                </div>
-                <div className="text-left">
-                  <h4 className="text-xl font-bold text-gray-800">Application Link</h4>
-                  <p className="text-sm text-gray-600">Share this link to receive applications</p>
-                </div>
-              </div>
-              
-              <div className="bg-white rounded-lg p-4 mb-4 px-40">
-                <p className="text-gray-600 text-sm mb-3 text-center">
-                  Candidates can apply for this position using the link below
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 relative">
-                    <input
-                      type="text"
-                      readOnly
-                      value={`${window.location.origin}/apply/${jobId}`}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-700 focus:outline-none focus:border-black transition-colors"
-                    />
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <FileText className='w-4 h-4'/>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      const shareLink = `${window.location.origin}/apply/${jobId}`;
-                      navigator.clipboard.writeText(shareLink);
-                      alert('Application link copied to clipboard!');
-                    }}
-                    className="bg-black text-white px-6 py-3 rounded-lg hover:bg-black transition-all font-semibold shadow-md hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
-                  >
-                    <Copy className='w-4 h-4'/>
-                    Copy
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className='mt-4 p-4 text-center items-center'>
-              <p className='text-black'>
-                Manage your jobs active lifecycle with full control.
-                <br></br>
-                Schedule an automatic close for smoother hiring workflows, or end it instantly when the position is filled.
-                <br></br>
-                Keep your listings updated and avoid confusion for candidates.
-                Smart scheduling helps maintain an organized and transparent recruitment process.
-              </p>
-            </div>
-
-            {/* job closed  */}
-            <div className="mt-6 p-4 bg-white rounded-lg px-40">
-              <h4 className="text-lg font-semibold text-black mb-2 text-center">Job Status</h4>
-              
-              {isJobClosed ? (
-                <div className="bg-gray-200 rounded-xl p-6">
-                  <div className="flex items-center justify-center mb-4">
-                    <div className="bg-white border rounded-full p-3 mr-3">
-                      <Lock className='w-4 h-4'/>
-                    </div>
-                    <div>
-                      <p className="text-black font-semibold">This job is closed</p>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white border border-black rounded-lg p-4 mb-4">
-                    <div className="flex items-center justify-center text-gray-700">
-                      <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-sm">
-                        {job?.closeDate ? 
-                          `Closed on: ${new Date(job.closeDate).toLocaleString('en-US', {
-                            year: 'numeric',
-                            month: 'long', 
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}` : 
-                          'This job has been manually closed'
-                        }
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col items-center">
-                    <p className="text-gray-600 text-sm mb-4 text-center max-w-md">
-                      This job is currently not accepting applications. Click below to reopen and start receiving applications again.
-                    </p>
-                    <button
-                      onClick={handleReopenJob}
-                      className="bg-black text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-all font-semibold shadow-md hover:shadow-lg flex items-center"
-                    >
-                      <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                      </svg>
-                      Reopen Job
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-gray-200 rounded-xl p-4">
-                  <p className='text-black mb-3 text-center'>
-                    Schedule when this job should automatically close or close it immediately.
-                  </p>
-                  
-                  {/* Schedule Close Section */}
-                  <div className="mb-4 p-3 bg-white rounded-lg items-center">
-                    <h5 className="font-medium text-gray-800 mb-2">Schedule Automatic Close</h5>
-                    <div className='flex items-center space-x-2 mb-3'>
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">Close Date:</label>
-                        <input
-                          type="date"
-                          value={jobCloseDate}
-                          onChange={(e) => setJobCloseDate(e.target.value)}
-                          min={new Date().toISOString().split('T')[0]}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm text-gray-600 mb-1">Close Time:</label>
-                        <input
-                          type="time"
-                          value={jobCloseTime}
-                          onChange={(e) => setJobCloseTime(e.target.value)}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div className="pt-6">
-                        <button
-                          onClick={handleCloseJob}
-                          className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
-                        >
-                          Schedule Close
-                        </button>
-                      </div>
-                    </div>
-                    {job?.closeDate && !isJobClosed && (
-                      <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border-l-4 border-orange-400">
-                        Scheduled to close: {new Date(job.closeDate).toLocaleString()}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Immediate Close Section */}
-                  <div className="p-3 bg-gray-200 rounded-lg">
-                    <h5 className="font-medium text-black mb-2">Close Immediately</h5>
-                    <div className='flex items-center justify-between'>
-                      <p className="text-black text-sm">
-                        Close this job right now. This action cannot be undone.
-                      </p>
-                      <button
-                        onClick={handleImmediateClose}
-                        className="bg-black text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
-                      >
-                        Close Now
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className='mt-6 p-4 text-center items-center'>
-              <p className='text-black'>
-                This action is irreversible, please proceed with caution.
-                <br></br>
-                Deleting this job will remove all associated applications, interview rounds, and uploaded files permanently.
-                <br></br>
-                Once deleted, this data cannot be recovered.
-                Make sure you have backed up any important information before confirming deletion.
-              </p>
-            </div>
-
-            {/* Delete Job Section */}
-            <div className="mt-8 p-4 bg-gray-200 rounded-lg">
-              <div className="flex items-start mb-3">
-                <svg className="w-6 h-6 text-black mr-2 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <div>
-                  <h4 className="text-lg font-semibold text-black mb-1">Danger Zone</h4>
-                  <p className="text-black text-sm font-medium">
-                    Once you delete this job, there is no going back. Please be certain.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="bg-white border border-black rounded p-3 mb-3">
-                <p className="text-gray-700 text-sm mb-2">This action will permanently delete:</p>
-                <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                  <li className="flex items-center">
-                    <span className="text-black mr-2">•</span>
-                    Job posting: <span className="font-semibold ml-1">{job?.jobTitle}</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-black mr-2">•</span>
-                    {candidateResponses.length} candidate application(s)
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-black mr-2">•</span>
-                    {tabs.length - 1} interview round(s) and all round data
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-black mr-2">•</span>
-                    All uploaded files and documents
-                  </li>
-                </ul>
-              </div>
-              
-              <button
-                onClick={handleDeleteJob}
-                disabled={isDeleting}
-                className="w-full bg-black text-white px-4 py-3 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold"
-              >
-                {isDeleting ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Deleting Job...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Delete Job Permanently
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        );
-      default:
-        // Handle round tabs dynamically
-        if (activeTab.startsWith('Round ')) {
-          const roundNumber = parseInt(activeTab.split(' ')[1]);
-          const candidatesForRound = getCandidatesForRound(roundNumber);
-          const statusCounts = getStatusCounts(roundNumber, candidatesForRound);
+      // Add all form field responses dynamically
+      allFieldLabels.forEach(label => {
+        const response = candidate.responses.find(r => r.fieldLabel === label);
+        if (response) {
+          let value = response.value;
           
+          // Handle different field types
+          if (Array.isArray(value)) {
+            // For checkbox - join multiple values
+            value = value.length > 0 ? value.join(', ') : 'None selected';
+          } else if (response.fieldType === 'file') {
+            value = value?.fileName || 'No file uploaded';
+          } else if (response.fieldType === 'date' && value) {
+            value = new Date(value).toLocaleDateString('en-IN');
+          } else if (!value || value === '') {
+            value = 'N/A';
+          }
+          
+          rowData[label] = value;
+        } else {
+          rowData[label] = 'N/A';
+        }
+      });
+
+      // Add metadata columns at the end
+      rowData['Applied Date'] = new Date(candidate.submittedAt).toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      rowData['Status'] = status.charAt(0).toUpperCase() + status.slice(1);
+      rowData['Notes'] = candidate.notes || 'No notes';
+
+      return rowData;
+    });
+
+    // Create worksheet from data
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Set column widths dynamically
+    const columnWidths = [
+      { wch: 25 }, // Candidate Name
+    ];
+    
+    // Add widths for dynamic fields
+    allFieldLabels.forEach(label => {
+      const labelLength = label.length;
+      columnWidths.push({ wch: Math.max(labelLength + 5, 20) });
+    });
+    
+    // Add widths for metadata columns
+    columnWidths.push(
+      { wch: 20 }, // Applied Date
+      { wch: 12 }, // Status
+      { wch: 40 }  // Notes
+    );
+
+    ws['!cols'] = columnWidths;
+
+    // Create workbook and add worksheet
+    const wb = XLSX.utils.book_new();
+    const sheetName = `Round ${roundNumber} - ${roundTitles[roundNumber] || 'Candidates'}`;
+    XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31)); // Excel sheet name limit
+
+    // Generate file name
+    const fileName = `${job?.jobTitle}_Round_${roundNumber}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    // Download Excel file
+    XLSX.writeFile(wb, fileName);
+  };
+
+  const renderTabContent = () => {
+    // Helper function to get round-specific status
+    const getRoundStatus = (candidate: FormResponse, round: number): string => {
+      if (round === 1) return candidate.status; // Use main status for Round 1
+      
+      const roundStatus = candidate.roundStatuses?.find(rs => rs.round === round);
+      return roundStatus?.status || 'pending';
+    };
+
+    // Helper function to get candidates for a specific round
+    const getCandidatesForRound = (round: number) => {
+      let candidates = [];
+      if (round === 1) {
+        // Round 1 shows all candidates
+        candidates = candidateResponses;
+      } else {
+        // Other rounds show candidates selected from previous round
+        candidates = candidateResponses.filter(candidate => {
+          const prevRoundStatus = getRoundStatus(candidate, round - 1);
+          return prevRoundStatus === 'selected';
+        });
+      }
+      
+      // Apply candidate filter
+      if (candidateFilter === "all") {
+        return candidates;
+      } else {
+        return candidates.filter(candidate => {
+          const status = getRoundStatus(candidate, round);
+          return status === candidateFilter;
+        });
+      }
+    };
+
+    // Helper function to get status counts for a specific round
+    const getStatusCounts = (round: number, candidates: FormResponse[]) => {
+      const selected = candidates.filter(c => getRoundStatus(c, round) === 'selected').length;
+      const rejected = candidates.filter(c => getRoundStatus(c, round) === 'rejected').length;
+      const pending = candidates.filter(c => getRoundStatus(c, round) === 'pending').length;
+      
+      return { selected, rejected, pending };
+    };
+
+    try {
+      switch (activeTab) {
+        case 'Job details':
           return (
-            <div className="space-y-4">
-              <div className="bg-white rounded-lg p-4 mb-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                      {roundNumber === 1 
-                        ? 'Round 1 - Candidate Applications' 
-                        : `Round ${roundNumber} - Interview Round`
-                      }
-                    </h3>
-                    <p className="text-gray-600">
-                      {roundNumber === 1 
-                        ? 'Review and select candidates who submitted their applications. Once a candidate is marked as Selected or Rejected, they cannot be moved back to Pending status for that round.'
-                        : `Candidates who were selected from Round ${roundNumber - 1}.`
-                      }
-                    </p>
+            <div className="bg-white rounded-lg p-6 mb-6">
+              <div className="mb-6">
+                <div className="flex items-center mb-6">
+                  <div className="bg-gray-100 rounded-xl p-3 mr-4 border-2 border-gray-300">
+                    <Building2 className='w-6 h-6 text-black'/>
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-black">
-                      {candidatesForRound.length}
+                  <h3 className="text-black text-xl">Company Information</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Company Name</p>
+                    <p className="text-black font-semibold">{job?.companyName}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Location</p>
+                    <p className="text-black">{job?.location}</p>
+                  </div>
+                  {job?.companyWebsite && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Website</p>
+                      <a 
+                        href={job.companyWebsite} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {job.companyWebsite}
+                      </a>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {roundNumber === 1 ? 'Total Applications' : `Qualified Candidates`}
+                  )}
+                  {job?.socialLinks && job.socialLinks.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Social Links</p>
+                      <div className="flex space-x-2">
+                        {job.socialLinks.map((link, index) => (
+                          <a 
+                            key={index}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline capitalize"
+                          >
+                            {link.platform}
+                          </a>
+                        ))}
+                      </div>
                     </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="mt-8">
+                <div className="flex items-center mb-6">
+                  <div className="bg-gray-100 rounded-xl p-3 mr-4 border-2 border-gray-300">
+                    <FileTextIcon className='w-6 h-6 text-black'/>
+                  </div>
+                  <h3 className="text-black text-xl">Job Description</h3>
+                </div>
+                <div className="max-w-none bg-white rounded-xl p-8 border-2 border-gray-200 ">
+                  {renderMakrdown(job?.aboutJob || "")}
+                </div>
+              </div>
+
+              <div className='mt-8 bg-white rounded-xl p-10 border-2 border-gray-200 text-center items-center'>
+                <p className='text-black'>
+                  Take your hiring beyond boundaries.
+                  <br></br>
+                  With this application link, candidates can apply from anywhere anytime.
+                  Share it across platforms like LinkedIn, email, or social media.
+                  <br></br>
+                  Every application is tracked automatically in your EasyHireDesk workspace.
+                </p>
+              </div>
+
+              <div className="mt-6 bg-white p-6">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="bg-blue-100 rounded-full p-3 mr-3">
+                    <Link2 className='w-6 h-6 text-black'/>
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-xl font-bold text-gray-800">Application Link</h4>
+                    <p className="text-sm text-gray-600">Share this link to receive applications</p>
                   </div>
                 </div>
                 
-                {/* Status summary for current round */}
-                {candidatesForRound.length > 0 && (
-                  <div className="mt-4 flex space-x-4 text-sm">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                      <span>Selected: {statusCounts.selected}</span>
+                <div className="bg-white rounded-lg p-4 mb-4 px-40">
+                  <p className="text-gray-600 text-sm mb-3 text-center">
+                    Candidates can apply for this position using the link below
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 relative">
+                      <input
+                        type="text"
+                        readOnly
+                        value={`${window.location.origin}/apply/${jobId}`}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-700 focus:outline-none focus:border-black transition-colors"
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <FileText className='w-4 h-4'/>
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                      <span>Rejected: {statusCounts.rejected}</span>
+                    <button
+                      onClick={() => {
+                        const shareLink = `${window.location.origin}/apply/${jobId}`;
+                        navigator.clipboard.writeText(shareLink);
+                        alert('Application link copied to clipboard!');
+                      }}
+                      className="bg-black text-white px-6 py-3 rounded-lg hover:bg-black transition-all font-semibold shadow-md hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
+                    >
+                      <Copy className='w-4 h-4'/>
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className='mt-8 bg-white rounded-xl p-10 border-2 border-gray-200 text-center items-center'>
+                <p className='text-black'>
+                  Manage your jobs active lifecycle with full control.
+                  <br></br>
+                  Schedule an automatic close for smoother hiring workflows, or end it instantly when the position is filled.
+                  <br></br>
+                  Keep your listings updated and avoid confusion for candidates.
+                  Smart scheduling helps maintain an organized and transparent recruitment process.
+                </p>
+              </div>
+
+              {/* job closed  */}
+              <div className="mt-6 p-4 bg-white rounded-lg px-40">
+                <h4 className="text-lg font-semibold text-black mb-2 text-center">Job Status</h4>
+                
+                {isJobClosed ? (
+                  <div className="bg-gray-200 rounded-xl p-6">
+                    <div className="flex items-center justify-center mb-4">
+                      <div className="bg-white border rounded-full p-3 mr-3">
+                        <Lock className='w-4 h-4'/>
+                      </div>
+                      <div>
+                        <p className="text-black font-semibold">This job is closed</p>
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                      <span>Pending: {statusCounts.pending}</span>
+                    
+                    <div className="bg-white border border-black rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-center text-gray-700">
+                        <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-sm">
+                          {job?.closeDate ? 
+                            `Closed on: ${new Date(job.closeDate).toLocaleString('en-US', {
+                              year: 'numeric',
+                              month: 'long', 
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}` : 
+                            'This job has been manually closed'
+                          }
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col items-center">
+                      <p className="text-gray-600 text-sm mb-4 text-center max-w-md">
+                        This job is currently not accepting applications. Click below to reopen and start receiving applications again.
+                      </p>
+                      <button
+                        onClick={handleReopenJob}
+                        className="bg-black text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-all font-semibold shadow-md hover:shadow-lg flex items-center"
+                      >
+                        <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                        </svg>
+                        Reopen Job
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-200 rounded-xl p-4">
+                    <p className='text-black mb-3 text-center'>
+                      Schedule when this job should automatically close or close it immediately.
+                    </p>
+                    
+                    {/* Schedule Close Section */}
+                    <div className="mb-4 p-3 bg-white rounded-lg items-center">
+                      <h5 className="font-medium text-gray-800 mb-2">Schedule Automatic Close</h5>
+                      <div className='flex items-center space-x-2 mb-3'>
+                        <div>
+                          <label className="block text-sm text-gray-600 mb-1">Close Date:</label>
+                          <input
+                            type="date"
+                            value={jobCloseDate}
+                            onChange={(e) => setJobCloseDate(e.target.value)}
+                            min={new Date().toISOString().split('T')[0]}
+                            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm text-gray-600 mb-1">Close Time:</label>
+                          <input
+                            type="time"
+                            value={jobCloseTime}
+                            onChange={(e) => setJobCloseTime(e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="pt-6">
+                          <button
+                            onClick={handleCloseJob}
+                            className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                          >
+                            Schedule Close
+                          </button>
+                        </div>
+                      </div>
+                      {job?.closeDate && !isJobClosed && (
+                        <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border-l-4 border-orange-400">
+                          Scheduled to close: {new Date(job.closeDate).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Immediate Close Section */}
+                    <div className="p-3 bg-gray-200 rounded-lg">
+                      <h5 className="font-medium text-black mb-2">Close Immediately</h5>
+                      <div className='flex items-center justify-between'>
+                        <p className="text-black text-sm">
+                          Close this job right now. This action cannot be undone.
+                        </p>
+                        <button
+                          onClick={handleImmediateClose}
+                          className="bg-black text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                        >
+                          Close Now
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
-              
-              {candidatesForRound.length === 0 ? (
-                <div className="bg-white rounded-lg p-8 text-center">
-                  {roundNumber === 1 ? (
+
+              <div className='mt-8 bg-white rounded-xl p-10 border-2 border-gray-200 text-center items-center'>
+                <p className='text-black'>
+                  This action is irreversible, please proceed with caution.
+                  <br></br>
+                  Deleting this job will remove all associated applications, interview rounds, and uploaded files permanently.
+                  <br></br>
+                  Once deleted, this data cannot be recovered.
+                  Make sure you have backed up any important information before confirming deletion.
+                </p>
+              </div>
+
+              {/* Delete Job Section */}
+              <div className="mt-8 p-4 bg-white px-40">
+                <div className="flex-1 text-center mb-3">
+                  <div>
+                    <h4 className="text-lg font-semibold text-black mb-1">Danger Zone</h4>
+                    <p className="text-black text-sm font-medium">
+                      Once you delete this job, there is no going back. Please be certain.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-200 border border-white rounded p-3 mb-3">
+                  <p className="text-black text-sm mb-2">This action will permanently delete:</p>
+                  <ul className="text-sm text-black space-y-1 ml-4">
+                    <li className="flex items-center">
+                      <span className="text-black mr-2">•</span>
+                      Job posting: <span className="font-semibold ml-1">{job?.jobTitle}</span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-black mr-2">•</span>
+                      {candidateResponses.length} candidate application(s)
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-black mr-2">•</span>
+                      {tabs.length - 1} interview round(s) and all round data
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-black mr-2">•</span>
+                      All uploaded files and documents
+                    </li>
+                  </ul>
+                </div>
+                
+                <button
+                  onClick={handleDeleteJob}
+                  disabled={isDeleting}
+                  className="w-full bg-black text-white px-4 py-3 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold"
+                >
+                  {isDeleting ? (
                     <>
-                      <div className="text-gray-400 mb-4">
-                        <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-gray-600 mb-2">No applications received yet.</p>
-                      <p className="text-sm text-gray-500 mb-4">
-                        Share the application link to start receiving applications.
-                      </p>
-                      <button
-                        onClick={() => {
-                          const shareLink = `${window.location.origin}/apply/${jobId}`;
-                          navigator.clipboard.writeText(shareLink);
-                          alert('Application link copied to clipboard!');
-                        }}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                      >
-                        Copy Application Link
-                      </button>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Deleting Job...
                     </>
                   ) : (
                     <>
-                      <p className="text-gray-600 mb-4">No candidates selected for this round yet.</p>
-                      <p className="text-sm text-gray-500">
-                        Please select candidates from Round {roundNumber - 1} first.
-                      </p>
+                      <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete Job Permanently
                     </>
                   )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {candidatesForRound
-                    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
-                    .map((candidate, index) => {
-                      // Pass the current round number to renderCandidateCard
-                      return renderCandidateCard(candidate, index, roundNumber);
-                    })}
-                </div>
-              )}
+                </button>
+              </div>
             </div>
           );
-        }
-        return null;
+        default:
+          // Handle round tabs dynamically
+          if (activeTab.startsWith('Round ')) {
+            const roundNumber = parseInt(activeTab.split(' ')[1]);
+            const candidatesForRound = getCandidatesForRound(roundNumber);
+            const statusCounts = getStatusCounts(roundNumber, candidatesForRound);
+            
+            return (
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg p-4 mb-2">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                        {roundNumber === 1 
+                          ? 'Round 1 - Candidate Applications' 
+                          : `Round ${roundNumber} - Interview Round`
+                        }
+                      </h3>
+                      <p className="text-gray-600 max-w-4xl">
+                        {roundNumber === 1 
+                          ? 'Review and select candidates who submitted their applications. Once a candidate is marked as Selected or Rejected, they cannot be moved back to Pending status for that round.'
+                          : `Candidates who were selected from Round ${roundNumber - 1}.`
+                        }
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-black">
+                        {candidatesForRound.length}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {roundNumber === 1 ? 'Total Applications' : `Qualified Candidates`}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Status summary for current round */}
+                  {candidatesForRound.length > 0 && (
+                    <div className="mt-4 flex space-x-4 text-sm">
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                        <span>Selected: {statusCounts.selected}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                        <span>Rejected: {statusCounts.rejected}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                        <span>Pending: {statusCounts.pending}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {candidatesForRound.length === 0 ? (
+                  <div className="bg-white rounded-lg p-8 text-center">
+                    {roundNumber === 1 ? (
+                      <>
+                        <div className="text-gray-400 mb-4">
+                          <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <p className="text-gray-600 mb-2">No applications received yet.</p>
+                        <p className="text-sm text-gray-500 mb-4">
+                          Share the application link to start receiving applications.
+                        </p>
+                        <button
+                          onClick={() => {
+                            const shareLink = `${window.location.origin}/apply/${jobId}`;
+                            navigator.clipboard.writeText(shareLink);
+                            alert('Application link copied to clipboard!');
+                          }}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                          Copy Application Link
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-gray-600 mb-4">No candidates selected for this round yet.</p>
+                        <p className="text-sm text-gray-500">
+                          Please select candidates from Round {roundNumber - 1} first.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {candidatesForRound
+                      .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+                      .map((candidate, index) => {
+                        // Pass the current round number to renderCandidateCard
+                        return renderCandidateCard(candidate, index, roundNumber);
+                      })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+          return null;
+      }
+    } catch (error) {
+      console.error("Error rendering tab content:", error);
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 className="text-red-800 font-semibold mb-2">Error Loading Content</h3>
+          <p className="text-red-600">There was an error loading this tab content. Please refresh the page.</p>
+        </div>
+      );
     }
-  } catch (error) {
-    console.error("Error rendering tab content:", error);
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <h3 className="text-red-800 font-semibold mb-2">Error Loading Content</h3>
-        <p className="text-red-600">There was an error loading this tab content. Please refresh the page.</p>
-      </div>
-    );
-  }
-};
+  };
 
   if (loading) {
     return (
@@ -1004,14 +1124,38 @@ const JobDetailsHireManager: React.FC = () => {
       <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
         < Navbar />
       </div>
-      <div className="mx-auto w-full max-w px-9 py-3 flex-1 flex gap-6 pt-28">
+      <div className="relative left-0 mx-auto w-full mb-8">
+        <div className="w-full h-70 relative overflow-hidden">
+          <img 
+            src="/images/hire-process-bg.jpg" 
+            alt="Background" 
+            className="w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/40"></div>
+
+          <div className="absolute top-6 left-9 z-10 pt-20">
+            <Link href="/joblists">
+              <button className="flex items-center gap-2 underline text-black px-4 py-2 font-medium">
+                <ChevronLeft className='w-5 h-5'/>
+                Back to Jobs
+              </button>
+            </Link>
+          </div>
+          
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-50 to-transparent"></div>
+        </div>
+        
+        
+        <div className="absolute bottom-8 left-0 right-0 px-9">
+          <div className="bg-black/90 backdrop-blur-sm rounded-xl shadow-xl p-4 border-2 border-gray-700 mx-auto max-w-4xl">
+            <h1 className="text-white text-xl md:text-3xl font-light text-center tracking-wider">{job.jobTitle}</h1>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto w-full max-w px-9 py-3 flex-1 flex gap-6">  
         {/* Main Content */}
         <div className="flex-1">
-          {/* Job Title Header */}
-          <div className="bg-white border border-black rounded-lg p-6 mb-8">
-            <h1 className="text-black text-2xl font-bold text-center">{job.jobTitle}</h1>
-          </div>
-
           {/* Navigation Tabs - Dynamic based on selected rounds */}
           {!loading && (
             <div className="flex items-center justify-between mb-8 overflow-x-hidden">
@@ -1019,10 +1163,10 @@ const JobDetailsHireManager: React.FC = () => {
                 <React.Fragment key={tab}>
                   <button
                     onClick={() => setActiveTab(tab)}
-                    className={`px-6 py-3 rounded-lg font-medium transition-all whitespace-nowrap ${
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                       activeTab === tab
-                        ? 'bg-white text-black'
-                        : 'bg-black text-white border border-gray-600 hover:bg-gray-700'
+                        ? 'bg-black text-white shadow-2xl border-2 border-black'
+                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-black hover:shadow-lg'
                     }`}
                   >
                     {tab.startsWith('Round ') ? (
@@ -1046,10 +1190,11 @@ const JobDetailsHireManager: React.FC = () => {
 
           {/* Sidebar and Content Layout */}
           {activeTab.startsWith('Round ') ? (
+            <>
             <div className="flex gap-6">
               {/* Left Sidebar - Filter Candidates */}
-              <div className="w-64 flex-shrink-0 bg-gray-800 rounded-lg shadow-md p-4 sticky top-4 self-start">
-                <h2 className="text-lg font-semibold mb-4 text-white text-center border-b rounded-lg">
+              <div className="w-64 flex-shrink-0 bg-gray-100 rounded-lg shadow-md p-4 sticky top-4 self-start">
+                <h2 className="text-lg font-semibold mb-4 text-black text-center border-b rounded-lg">
                   Filter Candidates
                 </h2>
                 <div className="space-y-2">
@@ -1057,8 +1202,8 @@ const JobDetailsHireManager: React.FC = () => {
                     onClick={() => setCandidateFilter("all")}
                     className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
                       candidateFilter === "all"
-                        ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600"
-                        : "text-white hover:bg-gray-600"
+                        ? "bg-white text-gray-800 border-l-4 border-blue-600"
+                        : "text-black hover:bg-gray-200"
                     }`}
                   >
                     All Candidates
@@ -1067,8 +1212,8 @@ const JobDetailsHireManager: React.FC = () => {
                     onClick={() => setCandidateFilter("selected")}
                     className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
                       candidateFilter === "selected"
-                        ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600"
-                        : "text-white hover:bg-gray-600"
+                        ? "bg-white text-gray-800 border-l-4 border-blue-600"
+                        : "text-black hover:bg-gray-200"
                     }`}
                   >
                     Selected
@@ -1077,8 +1222,8 @@ const JobDetailsHireManager: React.FC = () => {
                     onClick={() => setCandidateFilter("pending")}
                     className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
                       candidateFilter === "pending"
-                        ? "bg-blue-50 text-gray-800 border-l-4 border-blue-600"
-                        : "text-white hover:bg-gray-600"
+                        ? "bg-white text-gray-800 border-l-4 border-blue-600"
+                        : "text-black hover:bg-gray-200"
                     }`}
                   >
                     Pending
@@ -1101,6 +1246,61 @@ const JobDetailsHireManager: React.FC = () => {
                 {renderTabContent()}
               </div>
             </div>
+            <div className='flex-1 mt-12'>
+              <div className="max-w-6xl mx-auto">
+                <div className="text-center mb-12">
+                  <h3 className="text-3xl font-bold text-gray-900 mb-3">Quick Actions</h3>
+                  <p className="text-gray-600 max-w-2xl mx-auto">
+                    Essential tools to manage your recruitment process efficiently
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                  <div className="group bg-white rounded-xl border border-gray-200 hover:border-gray-900 transition-all duration-300 p-8 hover:shadow-xl">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="bg-gray-100 w-16 h-16 rounded-xl flex items-center justify-center mb-5 group-hover:bg-gray-900 transition-all duration-300">
+                        <FileDown className='w-8 h-8 text-gray-900 group-hover:text-white'/>
+                      </div>
+                            
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">Export Applications</h4>
+                      <p className="text-sm text-gray-600 mb-6">
+                        Download candidate data in CSV format
+                      </p>
+                            
+                      <button 
+                        className="bg-black text-white px-8 py-2.5 rounded-lg hover:bg-white hover:text-black border transition-all duration-200 font-medium text-sm"
+                        onClick={() => {
+                          const currentRound = parseInt(activeTab.split(" ")[1]);
+                          exportToExcel(currentRound);
+                        }}
+                      >
+                        Export CSV
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="group bg-white rounded-xl border border-gray-200 hover:border-gray-900 transition-all duration-300 p-8 hover:shadow-xl">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="bg-gray-100 w-16 h-16 rounded-xl flex items-center justify-center mb-5 group-hover:bg-gray-900 transition-all duration-300">
+                        <Radiation className='w-8 h-8 text-gray-900 group-hover:text-white'/>
+                      </div>
+                            
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">Need Help?</h4>
+                      <p className="text-sm text-gray-600 mb-6">
+                        Contact our support team for assistance
+                      </p>
+                            
+                      <Link href="/contact">
+                      <button className="bg-black text-white px-8 py-2.5 rounded-lg hover:bg-white hover:text-black border transition-all duration-200 font-medium text-sm">
+                        Get Support
+                      </button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            </>
           ) : (
             <div className="min-h-[400px]">
               {renderTabContent()}

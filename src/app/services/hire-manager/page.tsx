@@ -28,7 +28,7 @@
 import React from 'react';
 import { CheckCircle, Users, FileText, Eye, ArrowRight } from 'lucide-react';
 import Navbar from '@/src/components/Navbar';
-import FooterLogin from '@/src/components/FooterLogin';
+import Footer from '@/src/components/Footer';
 
 
 const processSteps = [
@@ -76,8 +76,8 @@ const processSteps = [
 const HireManagerPage = () => {
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br bg-white">
-      <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+    <div className="flex flex-col min-h-screen bg-white">
+      <div className="fixed top-0 left-0 w-full z-50 shadow-md bg-white">
         < Navbar />
       </div>
 
@@ -158,7 +158,7 @@ const HireManagerPage = () => {
         </div>       
       </div>
 
-      < FooterLogin />
+      < Footer />
     </div>
   );
 };
