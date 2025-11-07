@@ -7,7 +7,7 @@ export async function middleware(request) {
   const token = request.cookies.get("jwt")?.value;
 
   if (!token) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   try {
@@ -16,7 +16,7 @@ export async function middleware(request) {
     return NextResponse.next();
   } catch (error) {
     console.error("JWT verification failed:", error.message);
-    const response = NextResponse.redirect(new URL("/auth/login", request.url));
+    const response = NextResponse.redirect(new URL("/", request.url));
     response.cookies.delete("jwt");
     return response;
   }
