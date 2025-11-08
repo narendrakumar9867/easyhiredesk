@@ -23,5 +23,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/hireprocess", "/hireprocess/selectionprocess", "/hireprocess/selectionprocess/rounds", "/joblists", "/joblists/jobdetails-hire-manager/:id*", "/profile"],
+  matcher: ["/hireprocess", "/hireprocess/selectionprocess", "/hireprocess/selectionprocess/rounds", "/joblists", "/joblists/jobdetails-hire-manager/:id*", "/profile", "/edit-round"],
 };

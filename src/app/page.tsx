@@ -75,15 +75,17 @@ export default function Home() {
           <Hero
             button={
               <div className="flex gap-4">
-                <Link href="/hireprocess">
-                  <button className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90 mr-3">
-                    Hire Next Candidates
-                  </button>
+                <Link 
+                  href="/hireprocess" 
+                  className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90 mr-3"
+                >  
+                  Hire Next Candidates 
                 </Link>
-                <Link href="/joblists">
-                  <button className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90">
-                    See Our Job Lists
-                  </button>
+                <Link 
+                  href="/joblists"
+                  className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90"
+                >
+                  See Our Job Lists 
                 </Link>
               </div>
             }

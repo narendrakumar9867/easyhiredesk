@@ -9,7 +9,6 @@ import { useCandidates } from "@/src/hooks/useCandidates";
 import { useJobStatus } from "@/src/hooks/useJobStatus";
 import Navbar from '@/src/components/Navbar';
 import FooterLogin from '@/src/components/FooterLogin';
-import EditRoundDetails from '@/src/components/EditRoundDetails';
 import {
   JobHeader,
   CompanyInfo,
@@ -318,8 +317,8 @@ const JobDetailsHireManager: React.FC = () => {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">
                       {roundNumber === 1
-                        ? 'Round 1 - Candidate Applications'
-                        : `Round ${roundNumber} - Interview Round`
+                        ? `Round 1 - ${roundTitles[1]}`
+                        : `Round ${roundNumber} - ${roundTitles[roundNumber]}`
                       }
                     </h3>
                     <p className="text-gray-600 max-w-4xl">
@@ -481,6 +480,7 @@ const JobDetailsHireManager: React.FC = () => {
               {/* Quick Actions */}
               <QuickActions
                 currentRound={parseInt(activeTab.split(" ")[1])}
+                jobId={jobId}
                 onExport={(round) => exportToExcel(round, jobState, roundTitles, candidateFilter)}
                 onEditRound={(round) => {
                   setEditingRound(round);
@@ -495,23 +495,6 @@ const JobDetailsHireManager: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Edit Round Modal */}
-      {showEditModal && editingRound && (
-        <EditRoundDetails
-          jobId={jobId}
-          roundNumber={editingRound}
-          token={token || ''}
-          onClose={() => {
-            setShowEditModal(false);
-            setEditingRound(null);
-          }}
-          onSave={() => {
-            window.location.reload();
-          }}
-        />
-      )}
-
       <FooterLogin />
     </div>
   );

@@ -6,15 +6,29 @@ import { FileDown, Info, Radiation } from 'lucide-react';
 
 interface QuickActionsProps {
   currentRound: number;
+  jobId: string;
   onExport: (roundNumber: number) => void;
   onEditRound: (roundNumber: number) => void;
 }
 
 const QuickActions: React.FC<QuickActionsProps> = ({ 
-  currentRound, 
+  currentRound,
+  jobId, 
   onExport, 
   onEditRound 
 }) => {
+  const handleEdit = () => {
+    // Open edit page in new tab with proper parameters
+    if (jobId) {
+      const token = localStorage.getItem('token');
+      window.open(
+        `/edit-round?jobId=${jobId}&roundNumber=${currentRound}&token=${token}`,
+        '_blank'
+      );
+    } else {
+      alert('Job ID not found');
+    }
+  };
   return (
     <div className='flex-1 mt-12'>
       <div className="max-w-6xl mx-auto">
@@ -61,7 +75,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
               
               <button
                 className="bg-black text-white px-8 py-2.5 rounded-lg hover:bg-white hover:text-black border transition-all duration-200 font-medium text-sm"
-                onClick={() => onEditRound(currentRound)}
+                onClick={handleEdit} // Changed from onEditRound to handleEdit
               >
                 Edit
               </button>
