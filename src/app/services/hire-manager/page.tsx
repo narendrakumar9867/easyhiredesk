@@ -159,6 +159,7 @@ const HireManagerPage = () => {
       </div>
 
       < Footer />
+      
     </div>
   );
 };
