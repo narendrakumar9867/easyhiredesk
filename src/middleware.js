@@ -3,6 +3,7 @@ import { jwtVerify } from "jose";
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
+  
   const token = request.cookies.get("jwt")?.value;
 
   if (!token) {
@@ -12,6 +13,7 @@ export async function middleware(request) {
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     await jwtVerify(token, secret);
+    
     return NextResponse.next();
   } catch (error) {
     console.error("JWT verification failed:", error.message);
