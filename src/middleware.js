@@ -3,7 +3,6 @@ import { jwtVerify } from "jose";
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
-  
   const token = request.cookies.get("jwt")?.value;
 
   if (!token) {
