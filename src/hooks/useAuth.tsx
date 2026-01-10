@@ -123,7 +123,6 @@ export const useAuth = create<AuthStore>()(
                 try {
                     // First check for existing token from your backend
                     const token = get().token || localStorage.getItem("token");
-                    
                     if (token) {
                         // Try to verify with your backend first
                         try {
@@ -162,7 +161,6 @@ export const useAuth = create<AuthStore>()(
                             isCheckingAuth: false 
                         });
                     }
-                    
                 } catch (error: any) {
                     console.error("Error checking auth:", error);
                     localStorage.removeItem("token");
