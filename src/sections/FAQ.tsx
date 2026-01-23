@@ -26,7 +26,6 @@ const FAQ = () => {
     const toggleFAQ = (index: number) => {
         setOpenIndex(openIndex === index ? null : index);
     };
-
     return (
         <section className='bg-white px-4 md:py-24 sm:px-6 lg:px-8' aria-labelledby='faq-title'>
             <div className='max-w-3xl mx-auto'>
