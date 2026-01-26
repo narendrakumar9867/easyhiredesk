@@ -123,7 +123,6 @@ const HireManagerPage = () => {
                         {step.title}
                       </h3>
                     </div>
-                    
                     <p className={`text-gray-600 mb-4 leading-relaxed ${
                       index % 2 === 0 ? 'text-left' : 'text-left'
                     }`}>
