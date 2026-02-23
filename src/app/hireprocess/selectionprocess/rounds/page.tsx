@@ -1,189 +1,79 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Mail, Eye, Save, Edit3 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
-import { useRouter } from 'next/navigation';
-
-import Navbar from "@/src/components/Navbar"
-import FooterLogin from '@/src/components/FooterLogin';
+import React, { useState, useEffect } from 'react';
+import { Plus, Eye, Save, Edit3 } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import axios from 'axios';
+
+import Navbar from "@/src/components/Navbar";
+import FooterLogin from '@/src/components/FooterLogin';
+import RoundTabs from '@/src/components/Rounds/RoundTabs';
+import FormFieldEditor from '@/src/components/Rounds/FormFieldEditor';
+import FormFieldPreview from '@/src/components/Rounds/FormFieldPreview';
+import EmailTemplateEditor from '@/src/components/Rounds/EmailTemplateEditor';
+
+import { useFormFields } from '@/src/hooks/useFormFields';
+import { useRoundData } from '@/src/hooks/useRoundData';
+
+import { parseEmail } from '@/src/utils/emailParser';
+import { fieldTypes } from '@/src/utils/fieldTypes';
+
+import { FormField } from '@/src/types/rounds';
 
 const RoundPage = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  const [totalRounds, setTotalRounds] = useState(3);
-  const [allRoundsData, setAllRoundsData] = useState({});
-  const [currentRound, setCurrentRound] = useState(1);
-  const [roundDetailsIds, setRoundDetailsIds] = useState({});
-  
   const jobId = searchParams.get('jobId');
   const rounds = searchParams.get('rounds');
   
-  const [roundTitles, setRoundTitles] = useState({
-    1: 'Candidate Details Form'
+  const [totalRounds, setTotalRounds] = useState(3);
+  const [currentRound, setCurrentRound] = useState(1);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isAddingField, setIsAddingField] = useState(false);
+  const [newField, setNewField] = useState<Omit<FormField, 'id'>>({ 
+    label: '', 
+    type: 'text', 
+    required: false, 
+    placeholder: '', 
+    options: [] 
   });
-  const [formFields, setFormFields] = useState([
+
+  // Custom Hooks
+  const {
+    allRoundsData,
+    roundTitles,
+    setRoundTitles,
+    saveCurrentRoundData,
+    updateRoundTitle
+  } = useRoundData();
+
+  const {
+    formFields,
+    setFormFields,
+    addField: addFieldToState,
+    removeField,
+    updateField,
+    addOption,
+    updateOption,
+    removeOption
+  } = useFormFields([
     { id: 1, label: 'Full Name', type: 'text', required: true, placeholder: 'Enter full name' },
     { id: 2, label: 'Email', type: 'email', required: true, placeholder: 'Enter email address' },
     { id: 3, label: 'Phone Number', type: 'phone', required: true, placeholder: 'Enter phone number' }
   ]);
-  
-  const [selectedEmail, setSelectedEmail] = useState('Subject: Congratulations! You have been selected for Round ' + (currentRound + 1) + '\n\nDear [Candidate Name],\n\nWe are pleased to inform you that you have been selected to proceed to Round ' + (currentRound + 1) + ' for the position of [Position] at our company.\n\nWe will contact you soon with further details.\n\nBest regards,\nHR Team');
-  
-  const [rejectionEmail, setRejectionEmail] = useState('Subject: Thank you for your application - Round ' + currentRound + '\n\nDear [Candidate Name],\n\nThank you for your interest in the [Position] role at our company.\n\nAfter careful consideration of Round ' + currentRound + ', we have decided to move forward with other candidates whose qualifications more closely match our current requirements.\n\nWe appreciate the time you invested in the application process and encourage you to apply for future opportunities.\n\nBest regards,\nHR Team');
-  
-  const [showPreview, setShowPreview] = useState(false);
-  const [newField, setNewField] = useState({ label: '', type: 'text', required: false, placeholder: '' });
-  const [isAddingField, setIsAddingField] = useState(false);
 
-  const fieldTypes = [
-    { value: 'text', label: 'Text' },
-    { value: 'email', label: 'Email' },
-    { value: 'phone', label: 'Phone' },
-    { value: 'number', label: 'Number' },
-    { value: 'date', label: 'Date' },
-    { value: 'textarea', label: 'Textarea' },
-    { value: 'select', label: 'Dropdown' },
-    { value: 'radio', label: 'Radio Buttons' },
-    { value: 'checkbox', label: 'Checkboxes' },
-    { value: 'file', label: 'File Upload' }
-  ];
+  const [selectedEmail, setSelectedEmail] = useState('');
+  const [rejectionEmail, setRejectionEmail] = useState('');
 
-  const parseEmail = useCallback((emailText) => {
-    const lines = emailText.split('\n');
-    const subject = lines[0].replace('Subject: ', '').trim();
-    const body = lines.slice(2).join('\n').trim();
-    return { subject, body };
-  }, []);
-
-  // Updated handleSubmit function for RoundPage.js
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!jobId || !rounds) {
-      alert('Missing job or rounds information');
-      return;
-    }
-
-    try {
-      // Save current round data first
-      saveCurrentRoundData();
-      
-      // Get updated round data including current round
-      const updatedAllRoundsData = { ...allRoundsData };
-      const currentData = {
-        title: roundTitles[currentRound] || `Round ${currentRound}`,
-        formFields: currentRound === 1 ? formFields : [],
-        selectedEmail,
-        rejectionEmail
-      };
-      updatedAllRoundsData[currentRound] = currentData;
-      
-      // Submit each round's details
-      for (let roundNum = 1; roundNum <= totalRounds; roundNum++) {
-        const roundData = updatedAllRoundsData[roundNum];
-        
-        if (!roundData) {
-          alert(`Please configure Round ${roundNum} before submitting`);
-          return;
-        }
-
-        // Prepare payload with correct structure
-        const payload = {
-          jobId: jobId,
-          roundNumber: roundNum,
-          title: roundData.title || `Round ${roundNum}`,
-          formFields: roundData.formFields.map(field => ({
-            label: field.label,
-            fieldType: field.type,
-            placeholder: field.placeholder || '',
-            required: field.required || false,
-            options: ['select', 'radio', 'checkbox'].includes(field.type) 
-              ? (field.options || ['Option 1', 'Option 2']) 
-              : undefined
-          })),
-          selectedEmail: parseEmail(roundData.selectedEmail),
-          nonSelectedEmail: parseEmail(roundData.rejectionEmail)
-        };
-
-        console.log(`Submitting Round ${roundNum} with payload:`, payload);
-
-        const res = await axios.post("http://localhost:5000/api/round/details", payload, {
-          headers: {
-            "Content-Type": "application/json",
-          }
-        });
-        
-        console.log(`Round ${roundNum} saved:`, res.data);
-      }
-
-      alert("All rounds configured successfully!");
-      router.push("/");
-      
-    } catch (error) {
-      console.error("Error submitting rounds:", error);
-      console.error("Error details:", error.response?.data);
-      alert(`Error submitting rounds: ${error.response?.data?.message || error.message}`);
-    }
-  };
-
-  const saveCurrentRoundData = useCallback(() => {
-    const currentRoundData = {
-      title: roundTitles[currentRound] || `Round ${currentRound}`,
-      formFields: currentRound === 1 ? formFields : [],
-      selectedEmail,
-      rejectionEmail
-    };
-    
-    setAllRoundsData(prev => ({
-      ...prev,
-      [currentRound]: currentRoundData
-    }));
-  }, [currentRound, formFields, selectedEmail, rejectionEmail, roundTitles]);
-
-  useEffect(() => {
-    const fetchRoundDetails = async () => {
-      if (jobId && rounds) {
-        try {
-          console.log("Job ID:", jobId);
-          console.log("Number of rounds:", rounds);
-          
-          const ids = {};
-          const numberOfRounds = parseInt(rounds);
-          
-          for (let i = 1; i <= numberOfRounds; i++) {
-            ids[i] = jobId;
-          }
-          
-          setRoundDetailsIds(ids);
-          console.log("Round details IDs mapping:", ids);
-          
-        } catch (error) {
-          console.error('Error setting up round details:', error);
-          alert('Error setting up round details. Please try again.');
-        }
-      }
-    };
-  
-    fetchRoundDetails();
-  }, [jobId, rounds]);
-
-  useEffect(() => {
-    const rounds = searchParams.get('rounds');
-    if (rounds) {
-      setTotalRounds(parseInt(rounds));
-    }
-  }, [searchParams]);
-
+  // Initialize emails based on round
   useEffect(() => {
     if (currentRound === totalRounds) {
       setSelectedEmail('Subject: Congratulations! You have been selected\n\nDear [Candidate Name],\n\nWe are pleased to inform you that you have been selected for the position of [Position] at our company.\n\nWe will contact you soon with further details about joining our team.\n\nBest regards,\nHR Team');
     } else {
-      setSelectedEmail('Subject: Congratulations! You have been selected for Round ' + (currentRound + 1) + '\n\nDear [Candidate Name],\n\nWe are pleased to inform you that you have been selected to proceed to Round ' + (currentRound + 1) + ' for the position of [Position] at our company.\n\nWe will contact you soon with further details.\n\nBest regards,\nHR Team');
+      setSelectedEmail(`Subject: Congratulations! You have been selected for Round ${currentRound + 1}\n\nDear [Candidate Name],\n\nWe are pleased to inform you that you have been selected to proceed to Round ${currentRound + 1} for the position of [Position] at our company.\n\nWe will contact you soon with further details.\n\nBest regards,\nHR Team`);
     }
     
-    setRejectionEmail('Subject: Thank you for your application - Round ' + currentRound + '\n\nDear [Candidate Name],\n\nThank you for your interest in the [Position] role at our company.\n\nAfter careful consideration of Round ' + currentRound + ', we have decided to move forward with other candidates whose qualifications more closely match our current requirements.\n\nWe appreciate the time you invested in the application process and encourage you to apply for future opportunities.\n\nBest regards,\nHR Team');
+    setRejectionEmail(`Subject: Thank you for your application - Round ${currentRound}\n\nDear [Candidate Name],\n\nThank you for your interest in the [Position] role at our company.\n\nAfter careful consideration of Round ${currentRound}, we have decided to move forward with other candidates whose qualifications more closely match our current requirements.\n\nWe appreciate the time you invested in the application process and encourage you to apply for future opportunities.\n\nBest regards,\nHR Team`);
     
     const savedData = allRoundsData[currentRound];
     if (savedData) {
@@ -199,68 +89,22 @@ const RoundPage = () => {
     }
   }, [currentRound, totalRounds, allRoundsData]);
 
-  const addField = () => {
+  useEffect(() => {
+    const roundsParam = searchParams.get('rounds');
+    if (roundsParam) {
+      setTotalRounds(parseInt(roundsParam));
+    }
+  }, [searchParams]);
+
+  const handleAddField = () => {
     if (newField.label.trim()) {
-      const field = {
-        id: Date.now(),
-        label: newField.label,
-        type: newField.type,
-        required: newField.required,
-        placeholder: newField.placeholder
-      };
-      setFormFields([...formFields, field]);
-      setNewField({ label: '', type: 'text', required: false, placeholder: '' });
+      addFieldToState(newField);
+      setNewField({ label: '', type: 'text', required: false, placeholder: '', options: [] });
       setIsAddingField(false);
     }
   };
 
-  const removeField = (id) => {
-    setFormFields(formFields.filter(field => field.id !== id));
-  };
-
-  const updateField = (id, updates) => {
-    setFormFields(formFields.map(field => 
-      field.id === id ? { ...field, ...updates } : field
-    ));
-  };
-
-  const renderFieldPreview = (field) => {
-    const commonProps = {
-      className: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
-      placeholder: field.placeholder,
-      required: field.required
-    };
-
-    switch (field.type) {
-      case 'textarea':
-        return <textarea {...commonProps} rows="3" />;
-      case 'select':
-        return (
-          <select {...commonProps}>
-            <option value="">Select an option</option>
-            <option value="option1">Option 1</option>
-            <option value="option2">Option 2</option>
-          </select>
-        );
-      case 'file':
-        return <input type="file" {...commonProps} className="w-full px-3 py-2 border border-gray-300 rounded-md" />;
-      default:
-        return <input type={field.type} {...commonProps} />;
-    }
-  };
-
-  const updateRoundTitle = (roundNumber, title) => {
-    setRoundTitles(prev => ({
-      ...prev,
-      [roundNumber]: title
-    }));
-  };
-
-  const generateRounds = () => {
-    return Array.from({ length: totalRounds }, (_, i) => i + 1);
-  };
-
-  const handleRoundChange = (targetRound) => {
+  const handleRoundChange = (targetRound: number) => {
     if (currentRound === 1 && formFields.length === 0) {
       alert('Please add at least one form field before switching rounds');
       return;
@@ -271,14 +115,87 @@ const RoundPage = () => {
       return;
     }
     
-    saveCurrentRoundData();
+    saveCurrentRoundData({
+      currentRound,
+      formFields,
+      selectedEmail,
+      rejectionEmail,
+      roundTitles
+    });
     setCurrentRound(targetRound);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!jobId || !rounds) {
+      alert('Missing job or rounds information');
+      return;
+    }
+
+    try {
+      saveCurrentRoundData({
+        currentRound,
+        formFields,
+        selectedEmail,
+        rejectionEmail,
+        roundTitles
+      });
+      
+      const updatedAllRoundsData = { 
+        ...allRoundsData,
+        [currentRound]: {
+          title: roundTitles[currentRound] || `Round ${currentRound}`,
+          formFields: currentRound === 1 ? formFields : [],
+          selectedEmail,
+          rejectionEmail
+        }
+      };
+      
+      for (let roundNum = 1; roundNum <= totalRounds; roundNum++) {
+        const roundData = updatedAllRoundsData[roundNum];
+        
+        if (!roundData) {
+          alert(`Please configure Round ${roundNum} before submitting`);
+          return;
+        }
+
+        const payload = {
+          jobId: jobId,
+          roundNumber: roundNum,
+          title: roundData.title || `Round ${roundNum}`,
+          formFields: roundData.formFields.map((field: FormField) => ({
+            label: field.label,
+            fieldType: field.type,
+            placeholder: field.placeholder || '',
+            required: field.required || false,
+            options: ['select', 'radio', 'checkbox'].includes(field.type) 
+              ? (field.options || ['Option 1', 'Option 2']) 
+              : undefined
+          })),
+          selectedEmail: parseEmail(roundData.selectedEmail),
+          nonSelectedEmail: parseEmail(roundData.rejectionEmail)
+        };
+
+        await axios.post("http://localhost:5000/api/round/details", payload, {
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      alert("All rounds configured successfully!");
+      router.push("/");
+      
+    } catch (error: any) {
+      console.error("Error submitting rounds:", error);
+      alert(`Error submitting rounds: ${error.response?.data?.message || error.message}`);
+    }
   };
 
   const renderRoundContent = () => {
     if (currentRound === 1) {
       return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Form Fields Section */}
           <div className="bg-white p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
               <Edit3 size={20} />
@@ -289,61 +206,22 @@ const RoundPage = () => {
               <>
                 <div className="space-y-4 mb-6">
                   {formFields.map((field, index) => (
-                    <div key={field.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1">
-                          <input
-                            type="text"
-                            value={field.label}
-                            onChange={(e) => updateField(field.id, { label: e.target.value })}
-                            className="font-medium text-gray-900 bg-transparent border-none p-0 focus:outline-none focus:ring-0 w-full"
-                          />
-                        </div>
-                        {index > 2 && (
-                          <button
-                            onClick={() => removeField(field.id)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3">
-                        <select
-                          value={field.type}
-                          onChange={(e) => updateField(field.id, { type: e.target.value })}
-                          className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        >
-                          {fieldTypes.map(type => (
-                            <option key={type.value} value={type.value}>{type.label}</option>
-                          ))}
-                        </select>
-                        
-                        <input
-                          type="text"
-                          value={field.placeholder}
-                          onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
-                          placeholder="Placeholder text"
-                          className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        />
-                      </div>
-                      
-                      <label className="flex items-center mt-3">
-                        <input
-                          type="checkbox"
-                          checked={field.required}
-                          onChange={(e) => updateField(field.id, { required: e.target.checked })}
-                          className="mr-2"
-                        />
-                        <span className="text-sm text-gray-600">Required field</span>
-                      </label>
-                    </div>
+                    <FormFieldEditor
+                      key={field.id}
+                      field={field}
+                      index={index}
+                      canDelete={index > 2}
+                      onUpdate={updateField}
+                      onRemove={removeField}
+                      onAddOption={addOption}
+                      onUpdateOption={updateOption}
+                      onRemoveOption={removeOption}
+                    />
                   ))}
                 </div>
 
                 {isAddingField ? (
-                  <div className="border-2 border-dashed border-blue-300 rounded-lg p-4 bg-blue-50">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
                     <div className="space-y-3">
                       <input
                         type="text"
@@ -382,18 +260,30 @@ const RoundPage = () => {
                         />
                         <span className="text-sm text-gray-600">Required field</span>
                       </label>
+
+                      {['select', 'radio', 'checkbox'].includes(newField.type) && (
+                        <div className="p-3 bg-gray-100 rounded border border-gray-300">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Options (comma separated):
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Option 1, Option 2, Option 3"
+                            onChange={(e) => setNewField({
+                              ...newField, 
+                              options: e.target.value.split(',').map(opt => opt.trim()).filter(Boolean)
+                            })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Separate multiple options with commas</p>
+                        </div>
+                      )}
                       
                       <div className="flex gap-2">
-                        <button
-                          onClick={addField}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                        >
+                        <button onClick={handleAddField} className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-600">
                           Add Field
                         </button>
-                        <button
-                          onClick={() => setIsAddingField(false)}
-                          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                        >
+                        <button onClick={() => setIsAddingField(false)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
                           Cancel
                         </button>
                       </div>
@@ -402,7 +292,7 @@ const RoundPage = () => {
                 ) : (
                   <button
                     onClick={() => setIsAddingField(true)}
-                    className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
+                    className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-600 hover:border-gray-400 transition-colors flex items-center justify-center gap-2"
                   >
                     <Plus size={20} />
                     Add New Field
@@ -411,75 +301,31 @@ const RoundPage = () => {
               </>
             ) : (
               <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-blue-900 mb-2">Form Preview</h3>
-                  <p className="text-blue-700 text-sm">This is how candidates will see the form</p>
+                <div className="bg-gray-100 p-4 rounded-lg">
+                  <h3 className="font-semibold text-black mb-2">Form Preview</h3>
+                  <p className="text-black text-sm">This is how candidates will see the form</p>
                 </div>
-                
                 {formFields.map((field) => (
-                  <div key={field.id}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {field.label}
-                      {field.required && <span className="text-red-500 ml-1">*</span>}
-                    </label>
-                    {renderFieldPreview(field)}
-                  </div>
+                  <FormFieldPreview key={field.id} field={field} />
                 ))}
               </div>
             )}
           </div>
 
+          {/* Email Templates Section */}
           <div className="space-y-6">
-            <div className="bg-white p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-green-700">
-                <Mail size={20} />
-                Selected Candidates Email
-              </h3>
-              <textarea
-                value={selectedEmail}
-                onChange={(e) => setSelectedEmail(e.target.value)}
-                className="w-full h-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm"
-                placeholder="Write email template for selected candidates..."
-              />
-              <div className="mt-3 text-xs text-gray-500">
-                Use [Candidate Name] and [Position] as placeholders
-              </div>
-            </div>
-
-            <div className="bg-white p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-red-700">
-                <Mail size={20} />
-                Non-Selected Candidates Email
-              </h3>
-              <textarea
-                value={rejectionEmail}
-                onChange={(e) => setRejectionEmail(e.target.value)}
-                className="w-full h-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm"
-                placeholder="Write email template for non-selected candidates..."
-              />
-              <div className="mt-3 text-xs text-gray-500">
-                Use [Candidate Name] and [Position] as placeholders
-              </div>
-            </div>
-
-            <div className="bg-white p-6">
-              <h3 className="text-lg font-semibold mb-4">Email Preview</h3>
-              <div className="space-y-4">
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-medium text-green-800 mb-2">Selected Email Preview:</h4>
-                  <div className="text-sm text-green-700 whitespace-pre-line">
-                    {selectedEmail.replace('[Candidate Name]', 'John Doe').replace(/\[Position\]/g, 'Software Developer')}
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <h4 className="font-medium text-red-800 mb-2">Rejection Email Preview:</h4>
-                  <div className="text-sm text-red-700 whitespace-pre-line">
-                    {rejectionEmail.replace('[Candidate Name]', 'Jane Smith').replace(/\[Position\]/g, 'Software Developer')}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <EmailTemplateEditor
+              title="Selected Candidates Email"
+              value={selectedEmail}
+              onChange={setSelectedEmail}
+              type="selected"
+            />
+            <EmailTemplateEditor
+              title="Non-Selected Candidates Email"
+              value={rejectionEmail}
+              onChange={setRejectionEmail}
+              type="rejected"
+            />
           </div>
         </div>
       );
@@ -492,62 +338,24 @@ const RoundPage = () => {
               type="text"
               value={roundTitles[currentRound] || ''}
               onChange={(e) => updateRoundTitle(currentRound, e.target.value)}
-              placeholder={`Enter title for Round ${currentRound} (e.g., Technical Interview, HR Interview, Final Interview)`}
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+              placeholder={`Enter title for Round ${currentRound}`}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-lg"
             />
           </div>
 
           <div className="space-y-6">
-            <div className="bg-white p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-green-700">
-                <Mail size={20} />
-                Selected Candidates Email
-              </h3>
-              <textarea
-                value={selectedEmail}
-                onChange={(e) => setSelectedEmail(e.target.value)}
-                className="w-full h-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm"
-                placeholder="Write email template for selected candidates..."
-              />
-              <div className="mt-3 text-xs text-gray-500">
-                Use [Candidate Name] and [Position] as placeholders
-              </div>
-            </div>
-
-            <div className="bg-white p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-red-700">
-                <Mail size={20} />
-                Non-Selected Candidates Email
-              </h3>
-              <textarea
-                value={rejectionEmail}
-                onChange={(e) => setRejectionEmail(e.target.value)}
-                className="w-full h-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
-                placeholder="Write email template for non-selected candidates..."
-              />
-              <div className="mt-3 text-xs text-gray-500">
-                Use [Candidate Name] and [Position] as placeholders
-              </div>
-            </div>
-
-            <div className="bg-white p-6">
-              <h3 className="text-lg font-semibold mb-4">Email Preview</h3>
-              <div className="space-y-4">
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-medium text-green-800 mb-2">Selected Email Preview:</h4>
-                  <div className="text-sm text-green-700 whitespace-pre-line">
-                    {selectedEmail.replace('[Candidate Name]', 'John Doe').replace(/\[Position\]/g, 'Software Developer')}
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <h4 className="font-medium text-red-808 mb-2">Rejection Email Preview:</h4>
-                  <div className="text-sm text-red-700 whitespace-pre-line">
-                    {rejectionEmail.replace('[Candidate Name]', 'Jane Smith').replace(/\[Position\]/g, 'Software Developer')}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <EmailTemplateEditor
+              title="Selected Candidates Email"
+              value={selectedEmail}
+              onChange={setSelectedEmail}
+              type="selected"
+            />
+            <EmailTemplateEditor
+              title="Non-Selected Candidates Email"
+              value={rejectionEmail}
+              onChange={setRejectionEmail}
+              type="rejected"
+            />
           </div>
         </div>
       );
@@ -557,41 +365,29 @@ const RoundPage = () => {
   return (
     <div className="min-h-screen bg-white">
       <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
-        < Navbar />
+        <Navbar />
       </div>
 
-      <div className="flex justify-center gap-8 border-gray-300 pb-2 pt-28">
-        {generateRounds().map((round) => (
-          <div 
-            key={round}
-            onClick={() => handleRoundChange(round)}
-            className={`pb-2 cursor-pointer transition-all ${
-              currentRound === round 
-                ? "border-b-4 border-blue-600 font-bold text-blue-600" 
-                : "text-gray-600 hover:text-blue-500"
-            }`}
-          >
-            Round {round}
-            {allRoundsData[round] && <span className="ml-1 text-green-500">✓</span>}
-          </div>
-        ))}
+      <div className="pt-28">
+        <RoundTabs
+          totalRounds={totalRounds}
+          currentRound={currentRound}
+          allRoundsData={allRoundsData}
+          onRoundChange={handleRoundChange}
+        />
       </div>
 
       <div className="max-w-6xl mx-auto">
         <div className="bg-white p-6 mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Round {currentRound}{roundTitles[currentRound] ? ` - ${roundTitles[currentRound]}` : ''}
-              </h1>
-              <p className="text-gray-600 mt-2">
-                {currentRound === 1 
-                  ? `Configure candidate application form fields and email for Round ${currentRound} of ${totalRounds}`
-                  : `Configure email templates for Round ${currentRound} of ${totalRounds}`
-                }
-              </p>
-            </div>
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Round {currentRound}{roundTitles[currentRound] ? ` - ${roundTitles[currentRound]}` : ''}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {currentRound === 1 
+              ? `Configure candidate application form fields and email for Round ${currentRound} of ${totalRounds}`
+              : `Configure email templates for Round ${currentRound} of ${totalRounds}`
+            }
+          </p>
         </div>
 
         {renderRoundContent()}
@@ -601,7 +397,7 @@ const RoundPage = () => {
             {currentRound === 1 && (
               <button
                 onClick={() => setShowPreview(!showPreview)}
-                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:text-black hover:bg-gray-200 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-200 hover:text-black transition-colors"
               >
                 <Eye size={20} />
                 {showPreview ? 'Edit Mode' : 'Preview'}
@@ -611,7 +407,7 @@ const RoundPage = () => {
             {currentRound > 1 && (
               <button
                 onClick={() => handleRoundChange(currentRound - 1)}
-                className="px-4 py-2 bg-gray-200 text-black hover:text-white hover:bg-black rounded-lg"
+                className="px-4 py-2 bg-gray-200 text-black hover:bg-black hover:text-white rounded-lg"
               >
                 Previous Round
               </button>
@@ -620,7 +416,7 @@ const RoundPage = () => {
             {currentRound < totalRounds && (
               <button
                 onClick={() => handleRoundChange(currentRound + 1)}
-                className="px-4 py-2 bg-gray-200 text-black hover:text-white hover:bg-black rounded-lg"
+                className="px-4 py-2 bg-gray-200 text-black hover:bg-black hover:text-white rounded-lg"
               >
                 Save & Next
               </button>

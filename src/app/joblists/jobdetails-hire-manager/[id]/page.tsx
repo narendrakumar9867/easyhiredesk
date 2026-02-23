@@ -112,7 +112,10 @@ const JobDetailsHireManager: React.FC = () => {
         return (
           <div className="bg-white rounded-lg p-6 mb-6">
             <CompanyInfo job={jobState!} />
-            <JobDescription aboutJob={jobState?.aboutJob || ""} />
+            <JobDescription 
+              aboutJob={jobState?.aboutJob || ""}
+              jobId={jobId}
+            />
             <ApplicationLink jobId={jobId} />
 
             {/* Job Status Info Section */}
@@ -190,7 +193,7 @@ const JobDetailsHireManager: React.FC = () => {
                           value={jobCloseDate}
                           onChange={(e) => setJobCloseDate(e.target.value)}
                           min={new Date().toISOString().split('T')[0]}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="px-3 py-2 border border-gray-300 rounded-md cursor-pointer"
                         />
                       </div>
                       <div>
@@ -199,13 +202,13 @@ const JobDetailsHireManager: React.FC = () => {
                           type="time"
                           value={jobCloseTime}
                           onChange={(e) => setJobCloseTime(e.target.value)}
-                          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="px-3 py-2 border border-gray-300 rounded-md cursor-pointer"
                         />
                       </div>
                       <div className="pt-6">
                         <button
                           onClick={handleCloseJob}
-                          className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                          className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors cursor-pointer"
                         >
                           Schedule Close
                         </button>
@@ -227,7 +230,7 @@ const JobDetailsHireManager: React.FC = () => {
                       </p>
                       <button
                         onClick={handleImmediateClose}
-                        className="bg-black text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                        className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors cursor-pointer"
                       >
                         Close Now
                       </button>
@@ -250,47 +253,27 @@ const JobDetailsHireManager: React.FC = () => {
             </div>
 
             {/* Delete Job Section */}
-            <div className="mt-8 p-4 bg-white px-40">
-              <div className="flex-1 text-center mb-3">
-                <div>
-                  <h4 className="text-lg font-semibold text-black mb-1">Danger Zone</h4>
-                  <p className="text-black text-sm font-medium">
-                    Once you delete this job, there is no going back. Please be certain.
-                  </p>
-                </div>
+            <div className="mt-12 p-4 bg-white max-w-3xl mx-auto">
+              <div className="text-center mb-4">
+                <h4 className="text-xl font-bold text-black mb-2">⚠️ Danger Zone</h4>
+                <p className="text-black text-sm">
+                  Disclaimer: Once you delete this job, there is no going back.
+                </p>
               </div>
 
-              <div className="bg-gray-200 border border-white rounded p-3 mb-3">
-                <p className="text-black text-sm mb-2">This action will permanently delete:</p>
-                <ul className="text-sm text-black space-y-1 ml-4">
-                  <li className="flex items-center">
-                    <span className="text-black mr-2">•</span>
-                    Job posting: <span className="font-semibold ml-1">{jobState?.jobTitle}</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-black mr-2">•</span>
-                    {candidateResponsesState.length} candidate application(s)
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-black mr-2">•</span>
-                    {tabs.length - 1} interview round(s) and all round data
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-black mr-2">•</span>
-                    All uploaded files and documents
-                  </li>
-                </ul>
+              <div className="bg-white rounded-lg p-4 mb-4 border border-gray-200">
+                <p className="font-semibold text-gray-800 mb-2">You are about to erase this job from the system permanently.</p>
               </div>
 
               <button
                 onClick={() => handleDeleteJob(candidateResponsesState.length, tabs.length - 1)}
                 disabled={isDeleting}
-                className="w-full bg-black text-white px-4 py-3 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold"
+                className="w-full bg-black hover:bg-gray-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {isDeleting ? (
                   <>
-                    <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-                    Deleting Job...
+                    <Loader2 className="animate-spin mr-2 h-5 w-5" />
+                    Deleting...
                   </>
                 ) : (
                   <>
@@ -304,7 +287,6 @@ const JobDetailsHireManager: React.FC = () => {
         );
 
       default:
-        // Handle round tabs
         if (activeTab.startsWith('Round ')) {
           const roundNumber = parseInt(activeTab.split(' ')[1]);
           const candidatesForRound = getCandidatesForRound(roundNumber, candidateFilter);

@@ -116,7 +116,7 @@ const contactPage = () => {
                         ></textarea>
                         </div>
                         {message && (
-                            <p className={`text-center ${message.includes("success") ? "text-green-600" : "text-red-600"}`}>
+                            <p className={`text-center ${message.includes("success") ? "text-gray-800" : "text-red-600"}`}>
                                 {message}
                             </p>
                         )}

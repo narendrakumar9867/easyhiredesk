@@ -21,7 +21,7 @@ const RoundTabs: React.FC<RoundTabsProps> = ({
         <React.Fragment key={tab}>
           <button
             onClick={() => onTabChange(tab)}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 cursor-pointer ${
               activeTab === tab
                 ? 'bg-black text-white shadow-2xl border-2 border-black'
                 : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-black hover:shadow-lg'

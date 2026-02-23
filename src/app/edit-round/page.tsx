@@ -226,7 +226,7 @@ const EditRoundPage = () => {
               value={roundTitle}
               onChange={(e) => setRoundTitle(e.target.value)}
               placeholder={`Enter title for Round ${roundNumber}`}
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 text-lg"
             />
           </div>
 
@@ -236,7 +236,7 @@ const EditRoundPage = () => {
                 <h3 className="text-lg font-semibold">Form Fields</h3>
                 <button
                   onClick={() => setIsEditingFields(!isEditingFields)}
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  className="text-gray-800 hover:text-gray-400 text-sm font-medium cursor-pointer"
                 >
                   {isEditingFields ? 'View Mode' : 'Edit Mode'}
                 </button>
@@ -253,7 +253,7 @@ const EditRoundPage = () => {
                             type="text"
                             value={field.label}
                             onChange={(e) => updateField(index, { label: e.target.value })}
-                            className="font-medium text-gray-900 border-b border-gray-300 focus:border-blue-500 focus:outline-none w-full"
+                            className="font-medium text-gray-900 border-b border-gray-300 focus:outline-none w-full"
                           />
                           <button
                             onClick={() => removeField(index)}
@@ -298,7 +298,7 @@ const EditRoundPage = () => {
 
                   {/* Add New Field */}
                   {isAddingField ? (
-                    <div className="border-2 border-dashed border-blue-300 rounded-lg p-4 bg-blue-50">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
                       <div className="space-y-3">
                         <input
                           type="text"
@@ -341,13 +341,13 @@ const EditRoundPage = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={addField}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-400 cursor-pointer"
                           >
                             Add Field
                           </button>
                           <button
                             onClick={() => setIsAddingField(false)}
-                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 cursor-pointer"
                           >
                             Cancel
                           </button>
@@ -357,7 +357,7 @@ const EditRoundPage = () => {
                   ) : (
                     <button
                       onClick={() => setIsAddingField(true)}
-                      className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                      className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-600 hover:border-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                     >
                       + Add New Field
                     </button>

@@ -21,6 +21,8 @@ const PublicJobApplicationForm = () => {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 2;
   const [error, setError] = useState<string | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
@@ -123,6 +125,16 @@ const PublicJobApplicationForm = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   });
+
+  const handleNextStep = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setCurrentStep(2);
+  };
+
+  const handlePreviousStep = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setCurrentStep(1);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -262,7 +274,7 @@ const PublicJobApplicationForm = () => {
           <p className="text-gray-600 text-lg mb-6">{error}</p>
           <button
             onClick={() => router.push("/")}
-            className="bg-black text-white px-6 py-2.5 rounded-md hover:bg-gray-800 transition-colors font-medium"
+            className="bg-black text-white px-6 py-2.5 rounded-md hover:bg-gray-800 transition-colors font-medium cursor-pointer"
           >
             Browse Other Opportunities
           </button>
@@ -285,7 +297,7 @@ const PublicJobApplicationForm = () => {
           </p>
           <button
             onClick={() => router.push('/')}
-            className="bg-black text-white px-6 py-2 rounded-md hover:bg-white hover:text-black border transition-colors"
+            className="bg-black text-white px-6 py-2 rounded-md hover:bg-white hover:text-black border transition-colors cursor-pointer"
           >
             View My Applications
           </button>
@@ -309,7 +321,7 @@ const PublicJobApplicationForm = () => {
           <div className="space-y-3">
             <button
               onClick={() => router.push(`/`)}
-              className="w-full bg-black text-white px-6 py-2 rounded-md hover:bg-white hover:text-black border transition-colors"
+              className="w-full bg-black text-white px-6 py-2 rounded-md hover:bg-white hover:text-black border transition-colors cursor-pointer"
             >
               View My Applications
             </button>
@@ -333,154 +345,190 @@ const PublicJobApplicationForm = () => {
         <div className="p-6 text-xl text-center mb-4 pt-12 border-b border-gray-200">
           Candidate Registration Form
         </div>
+
         {/* Header */}
-        <div className="p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {formConfig.job.title}
-          </h1>
-          
-          {/* Job Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 border-b pb-4 border-gray-200">
-            <div className="space-y-3">
-              <div>
-                <span className="text-gray-600 font-medium text-sm">Company:</span>
-                <p className="text-gray-800">{formConfig.job.company}</p>
+        <div className="p-6 mb-6 border-b border-gray-200">
+          {currentStep === 1 && (
+            <>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {formConfig.job.title}
+            </h1>
+
+            {/* Job Info Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 border-b pb-4 border-gray-200">
+              <div className="space-y-3">
+                <div>
+                  <span className="text-gray-600 font-medium text-sm">Company:</span>
+                  <p className="text-gray-800">{formConfig.job.company}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600 font-medium text-sm">Location:</span>
+                  <p className="text-gray-800">{formConfig.job.location}</p>
+                </div>
               </div>
-              <div>
-                <span className="text-gray-600 font-medium text-sm">Location:</span>
-                <p className="text-gray-800">{formConfig.job.location}</p>
+              <div className="space-y-3">
+                {formConfig.job.companyWebsite && (
+                  <div>
+                    <span className="text-gray-600 font-medium text-sm">Website:</span>
+                    <p className="text-gray-800">
+                      <a href={formConfig.job.companyWebsite} target="_blank" rel="noopener noreferrer" 
+                        className="text-blue-600 hover:underline">
+                        {formConfig.job.companyWebsite}
+                      </a>
+                    </p>
+                  </div>
+                )}
+                {formConfig.job.socialLinks && Array.isArray(formConfig.job.socialLinks) && formConfig.job.socialLinks.length > 0 && (
+                  <div>
+                    <span className="text-gray-600 font-medium text-sm">Social Links:</span>
+                    <div className="text-gray-800">
+                      {formConfig.job.socialLinks.map((link, index) => (
+                        <div key={index}>
+                          <a href={link.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-blue-600 hover:underline capitalize">
+                            {link.platform}
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="space-y-3">
-              {formConfig.job.companyWebsite && (
-                <div>
-                  <span className="text-gray-600 font-medium text-sm">Website:</span>
-                  <p className="text-gray-800">
-                    <a href={formConfig.job.companyWebsite} target="_blank" rel="noopener noreferrer" 
-                       className="text-blue-600 hover:underline">
-                      {formConfig.job.companyWebsite}
-                    </a>
-                  </p>
+
+            {/* Job Description */}
+            {formConfig.job.aboutJob && (
+              <div className="mb-4 pb-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Job Description</h3>
+                {renderMakrdown(formConfig.job.aboutJob)}
+              </div>
+            )}
+
+            {/* Next Button */}
+            <div className="flex justify-end pt-6">
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="bg-black text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium cursor-pointer"
+              >
+                Next: Fill Application →
+              </button>
+            </div>
+            </>
+          )}
+
+          {currentStep === 2 && (
+            <>
+            <div className="pt-4 border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800">
+                {formConfig.roundTitle}
+              </h2>
+              <p className="text-gray-600 text-sm mt-1">
+                Please fill out all required fields to submit your application.
+              </p>
+            </div>
+
+            {/* Application Form */}
+            <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+              {formConfig.formFields.map((field, index) => (
+                <div key={index}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {field.label}
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                  </label>
+                  <RenderField
+                    field={field}
+                    formData={formData}
+                    handleInputChange={(fieldlabel, value) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        [fieldlabel]: value
+                      }));
+                    }}
+                  />
                 </div>
-              )}
-              {formConfig.job.socialLinks && Array.isArray(formConfig.job.socialLinks) && formConfig.job.socialLinks.length > 0 && (
-                <div>
-                  <span className="text-gray-600 font-medium text-sm">Social Links:</span>
-                  <div className="text-gray-800">
-                    {formConfig.job.socialLinks.map((link, index) => (
-                      <div key={index}>
-                        <a href={link.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-blue-600 hover:underline capitalize">
-                          {link.platform}
-                        </a>
-                      </div>
-                    ))}
+              ))}
+
+              {!authUser ? (
+                <div className="bg-gray-100 border border-gray-200 rounded-lg p-4">
+                  <p className="text-black mb-4 text-center font-medium">
+                    Sign up or log in to submit your application
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowSignup(true)}
+                      className="bg-black text-white px-6 py-2 rounded-md hover:bg-white hover:text-black border transition-colors cursor-pointer"
+                    >
+                      Sign Up
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowLogin(true)}
+                      className="bg-white text-black border px-6 py-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                    >
+                      Log In
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePreviousStep}
+                      className="bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors font-medium cursor-pointer"
+                    >
+                      ← Back
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="pt-10">
+                  <div className="flex justify-center mb-8">
+                    {/* do not use this site key in production */}
+                    <ReCAPTCHA
+                      sitekey={process.env.NEXT_PUBLIC_SITE_KEY_RECAPTCHA!}
+                      onChange={(value) => setCaptchaValue(value)}
+                    />
+                  </div>
+
+                  <div className="flex gap-3 justify-between">
+                    <button
+                      type="button"
+                      onClick={handlePreviousStep}
+                      className="bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors font-medium cursor-pointer"
+                    >
+                      ← Back
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="bg-black text-white py-3 px-8 rounded-lg hover:bg-gray-800 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg cursor-pointer"
+                    >
+                      {submitting ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="animate-spin h-5 w-5"/>
+                          Submitting...
+                        </span>
+                      ) : (
+                        'Submit Application'
+                      )}
+                    </button>
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Job Description */}
-          {formConfig.job.aboutJob && (
-            <div className="mb-4 pb-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Job Description</h3>
-              {renderMakrdown(formConfig.job.aboutJob)}
-            </div>
+            </form>
+            </>
           )}
-            
-          <div className="pt-4 border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800">
-              {formConfig.roundTitle}
-            </h2>
-            <p className="text-gray-600 text-sm mt-1">
-              Please fill out all required fields to submit your application.
-            </p>
-          </div>
         </div>
 
-        {/* Application Form */}
-        <div className="p-6 border-b border-gray-200">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {formConfig.formFields.map((field, index) => (
-              <div key={index}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {field.label}
-                  {field.required && <span className="text-red-500 ml-1">*</span>}
-                </label>
-                <RenderField
-                  field={field}
-                  formData={formData}
-                  handleInputChange={(fieldlabel, value) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      [fieldlabel]: value
-                    }));
-                  }}
-                />
-              </div>
-            ))}
-
-            {!authUser ? (
-              <div className="bg-gray-100 border border-gray-200 rounded-lg p-4">
-                <p className="text-black mb-4 text-center font-medium">
-                  Sign up or log in to submit your application
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <button
-                    type="button"
-                    onClick={() => setShowSignup(true)}
-                    className="bg-black text-white px-6 py-2 rounded-md hover:bg-white hover:text-black border transition-colors"
-                  >
-                    Sign Up
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowLogin(true)}
-                    className="bg-white text-black border px-6 py-2 rounded-md hover:bg-gray-100 transition-colors"
-                  >
-                    Log In
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="pt-10">
-                <div className="flex justify-center mb-8">
-                  {/* do not use this site key in production */}
-                  <ReCAPTCHA
-                    sitekey={process.env.NEXT_PUBLIC_SITE_KEY_RECAPTCHA!}
-                    onChange={(value) => setCaptchaValue(value)}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-30 mx-auto block bg-black text-white py-3 px-6 rounded-full hover:bg-gray-800 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg"
-                >
-                  {submitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="animate-spin h-5 w-5"/>
-                      Submitting...
-                    </span>
-                  ) : (
-                    'Submit'
-                  )}
-                </button>
-              </div>
-            )}
-          </form>
-        </div>
-
-        <div className="p-6 pt-10 text-sm text-center">
+        <div className="p-6 pt-6 text-sm text-center">
           Powered by EasyhireDesk
         </div>
 
         {showScrollTop && (
           <button
             onClick={scrollToTop}
-            className="fixed bottom-8 right-8 bg-black text-white p-3 rounded-full shadow-lg duration-300 z-50"
+            className="fixed bottom-8 right-8 bg-black text-white p-3 rounded-full shadow-lg duration-300 z-50 cursor-pointer"
             aria-label="Scroll to top"
           >
             <ArrowBigUp className="w-6 h-6"/>

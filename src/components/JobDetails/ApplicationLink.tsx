@@ -11,7 +11,6 @@ const ApplicationLink: React.FC<ApplicationLinkProps> = ({ jobId }) => {
   const handleCopyLink = () => {
     const shareLink = `${window.location.origin}/apply/${jobId}`;
     navigator.clipboard.writeText(shareLink);
-    alert('Application link copied to clipboard!');
   };
 
   return (
@@ -56,7 +55,7 @@ const ApplicationLink: React.FC<ApplicationLinkProps> = ({ jobId }) => {
             </div>
             <button
               onClick={handleCopyLink}
-              className="bg-black text-white px-6 py-3 rounded-lg hover:bg-black transition-all font-semibold shadow-md hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
+              className="bg-black text-white px-6 py-3 rounded-lg hover:bg-black transition-all font-semibold shadow-md hover:shadow-lg flex items-center gap-2 whitespace-nowrap cursor-pointer"
             >
               <Copy className='w-4 h-4'/>
               Copy

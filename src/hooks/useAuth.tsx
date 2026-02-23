@@ -17,6 +17,7 @@ interface SignUpData {
 }
 
 interface LoginData {
+    role: string;
     email: string;
     password: string;
 }
@@ -207,9 +208,8 @@ export const useAuth = create<AuthStore>()(
                     }
                     
                     set({ authUser: res.data });
-                    toast.success("Logged in successfully.");
                 } catch (error: any) {
-                    toast.error(error.response?.data?.message || "Login failed.");
+                    throw error;
                 } finally {
                     set({ isLoggingIn: false });
                 }

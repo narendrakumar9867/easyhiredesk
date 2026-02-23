@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { Eye, Edit, Building2, MapPin, Globe, Github, Linkedin, Twitter, Plus, X, Save } from 'lucide-react';
+import { Eye, Edit, Building2, MapPin, Globe, Linkedin, Twitter, Plus, X, Save } from 'lucide-react';
 import axios from "axios";
 
 import Navbar from "@/src/components/Navbar";
@@ -9,15 +9,22 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/hooks/useAuth';
 import renderMakrdown from '@/src/components/MarkdownRenderer';
 
+interface SocialLink {
+  id: number;
+  platform: string;
+  url: string;
+}
+
 export default function JobDetailsPage() {
   const [activeTab, setActiveTab] = useState('edit');
   const { token } = useAuth();
+
   const [formData, setFormData] = useState({
     companyName: '',
     jobTitle: '',
     location: '',
     companyWebsite: '',
-    socialLinks: [],
+    socialLinks: [] as SocialLink[],
     aboutJob: '',
   });
 
@@ -53,7 +60,7 @@ export default function JobDetailsPage() {
 
   const [newSocialLink, setNewSocialLink] = useState({ platform: 'linkedin', url: '' });
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -70,18 +77,17 @@ export default function JobDetailsPage() {
     }
   };
 
-  const removeSocialLink = (id) => {
+  const removeSocialLink = (id: number) => {
     setFormData(prev => ({
       ...prev,
       socialLinks: prev.socialLinks.filter(link => link.id !== id)
     }));
   };
 
-  const getSocialIcon = (platform) => {
+  const getSocialIcon = (platform: string) => {
     switch (platform) {
       case 'linkedin': return <Linkedin className="w-4 h-4" />;
       case 'twitter': return <Twitter className="w-4 h-4" />;
-      case 'github': return <Github className="w-4 h-4" />;
       default: return <Globe className="w-4 h-4" />;
     }
   };
@@ -120,7 +126,7 @@ export default function JobDetailsPage() {
                     value={formData.companyName}
                     onChange={(e) => handleInputChange('companyName', e.target.value)}
                     placeholder="e.g., TechCorp Inc."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-transparent transition-all duration-200"
                     />
                 </div>
 
@@ -133,7 +139,7 @@ export default function JobDetailsPage() {
                     value={formData.jobTitle}
                     onChange={(e) => handleInputChange('jobTitle', e.target.value)}
                     placeholder="e.g., Senior Frontend Developer"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-transparent transition-all duration-200"
                     />
                 </div>
 
@@ -148,7 +154,7 @@ export default function JobDetailsPage() {
                         value={formData.location}
                         onChange={(e) => handleInputChange('location', e.target.value)}
                         placeholder="e.g., San Francisco, CA (Remote)"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:border-transparent transition-all duration-200"
                     />
                     </div>
                 </div>
@@ -164,7 +170,7 @@ export default function JobDetailsPage() {
                         value={formData.companyWebsite}
                         onChange={(e) => handleInputChange('companyWebsite', e.target.value)}
                         placeholder="https://company.com"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:border-transparent transition-all duration-200"
                     />
                     </div>
                 </div>
@@ -179,7 +185,7 @@ export default function JobDetailsPage() {
                     <select
                     value={newSocialLink.platform}
                     onChange={(e) => setNewSocialLink(prev => ({ ...prev, platform: e.target.value }))}
-                    className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="px-4 py-3 border border-gray-300 rounded-xl focus:border-transparent"
                     >
                     <option value="linkedin">LinkedIn</option>
                     <option value="twitter">Twitter</option>
@@ -189,7 +195,7 @@ export default function JobDetailsPage() {
                     value={newSocialLink.url}
                     onChange={(e) => setNewSocialLink(prev => ({ ...prev, url: e.target.value }))}
                     placeholder="Enter URL"
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:border-transparent"
                     />
                     <button
                     onClick={addSocialLink}

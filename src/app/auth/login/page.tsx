@@ -1,9 +1,10 @@
 "use client";
 import { useState, useCallback } from "react";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { useAuth } from "@/src/hooks/useAuth";
 
 interface FormData {
+  role: string;
   email: string;
   password: string;
 }
@@ -18,6 +19,7 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
   if(!isOpen) return null;
 
   const [formData, setFormData] = useState<FormData>({
+    role: "candidate",
     email: "",
     password: "",
   });
@@ -48,6 +50,16 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
   }
 
   const validateForm = useCallback((): boolean => {
+    if(!formData.role) {
+      toast.error("Please select role.")
+      return false;
+    }
+
+    if(!formData.email.trim()) {
+      toast.error("Email is required.");
+      return false;
+    }
+
     if(!formData.email.trim()) {
       toast.error("Email is required.");
       return false;
@@ -81,14 +93,31 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
 
     try {
       await login(formData);
+      toast.success("Logged in successfully!");
       onClose();
-    } catch (error) {
-      console.error("Login failed:", error);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message;
+      
+      if (error.response?.status === 400) {
+        if (errorMessage?.includes("does not exist")) {
+          toast.error("No account found with this email.");
+        } else if (errorMessage?.includes("password")) {
+          toast.error("Incorrect password.");
+        } else if (errorMessage?.includes("role")) {
+          toast.error(errorMessage);
+        } else {
+          toast.error(errorMessage || "Invalid credentials.");
+        }
+      } else {
+        toast.error("Login failed. Please try again.");
+      }
     }
   }, [formData, validateForm, login, onClose]);
 
   return (
     <>
+      <Toaster position="top-center"/>
+
       <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
       <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md relative">
 
@@ -105,6 +134,19 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <select 
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleInputChange}
+            disabled={isLoggingIn}
+            required
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none"
+          >
+            <option value="candidate">Candidate</option>
+            <option value="hire_manager">Hire Manager</option>
+          </select>
+
           <input
             type="email"
             name="email"

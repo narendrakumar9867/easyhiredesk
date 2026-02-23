@@ -283,74 +283,74 @@ export default function JobListsPage() {
                 </p>
                
                 {/* Feature Highlights */}
-                <div className='bg-gradient-to-br bg-gray-50 border-2 border-gray-200 rounded-xl p-6 max-w-4xl mx-auto mb-10'>
-                    <h3 className='text-xl font-semibold text-gray-800 mb-4'>Quick Overview</h3>
-                    <p className='text-gray-600 mb-4'>
+                <div className='bg-gradient-to-br bg-gray-800 border-2 border-gray-200 rounded-xl p-6 max-w-4xl mx-auto mb-10'>
+                    <h3 className='text-xl font-semibold text-white mb-4'>Quick Overview</h3>
+                    <p className='text-gray-400 mb-4'>
                     Get a complete overview of your recruitment pipeline. Track open positions actively receiving applications, review closed jobs, and manage your entire hiring workflow with ease.
                     </p>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-3 text-left'>
                     <div className='flex items-start'>
-                        <Check className='w-5 h-5 text-black mr-2 mt-0.5 flex-shrink-0'/>
-                        <span className='text-sm text-gray-700'>View all your active job postings at a glance</span>
+                        <Check className='w-5 h-5 text-white mr-2 mt-0.5 flex-shrink-0'/>
+                        <span className='text-sm text-white'>View all your active job postings at a glance</span>
                     </div>
                     <div className='flex items-start'>
-                        <Check className='w-5 h-5 text-black mr-2 mt-0.5 flex-shrink-0'/>
-                        <span className='text-sm text-gray-700'>Filter between open and closed positions</span>
+                        <Check className='w-5 h-5 text-white mr-2 mt-0.5 flex-shrink-0'/>
+                        <span className='text-sm text-white'>Filter between open and closed positions</span>
                     </div>
                     <div className='flex items-start'>
-                        <Check className='w-5 h-5 text-black mr-2 mt-0.5 flex-shrink-0'/>
-                        <span className='text-sm text-gray-700'>Access detailed candidate applications for each job</span>
+                        <Check className='w-5 h-5 text-white mr-2 mt-0.5 flex-shrink-0'/>
+                        <span className='text-sm text-white'>Access detailed candidate applications for each job</span>
                     </div>
                     <div className='flex items-start'>
-                        <Check className='w-5 h-5 text-black mr-2 mt-0.5 flex-shrink-0'/>
-                        <span className='text-sm text-gray-700'>Manage interview rounds and selection process</span>
+                        <Check className='w-5 h-5 text-white mr-2 mt-0.5 flex-shrink-0'/>
+                        <span className='text-sm text-white'>Manage interview rounds and selection process</span>
                     </div>
                     </div>
                 </div>
                 </div>
 
-                <div className="max-w-full px-9 py-4 flex-1 flex gap-6 pt-4">
+                <div className="max-w-full px-9 py-4 flex-1 flex gap-6 pt-4 bg-white">
                     {/* Sidebar */}
-                        <div className="w-64 flex-shrink-0 rounded-2xl shadow-lg p-5 bg-gray-100 text-black">
-                            <h2 className="text-xl font-semibold mb-2 text-black text-center">Filter Jobs</h2>
-                            <p className='text-sm text-gray-500 text-center mb-6 pt-6'>Filter and manage jobs based on their current hiring status.</p>
-                            <div className="space-y-2 pt-4">
-                                <button
-                                    onClick={() => setJobFilter("all")}
-                                    className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
-                                        jobFilter === "all" 
-                                            ? "bg-white text-gray-800 border-l-4 border-blue-600" 
-                                            : "text-black hover:bg-gray-200"
+                    <div className="w-64 flex-shrink-0 rounded-2xl shadow-lg p-5 bg-gray-100 text-black">
+                        <h2 className="text-xl font-semibold mb-2 text-black text-center">Filter Jobs</h2>
+                        <p className='text-sm text-gray-500 text-center mb-6 pt-6'>Filter and manage jobs based on their current hiring status.</p>
+                        <div className="space-y-2 pt-4">
+                            <button
+                                onClick={() => setJobFilter("all")}
+                                className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                                    jobFilter === "all" 
+                                        ? "bg-white text-gray-800 border-l-4 border-blue-600" 
+                                        : "text-black hover:bg-gray-200"
                                     }`}
-                                >
-                                    All Jobs ({jobs.length})
-                                </button>
-                                <button
-                                    onClick={() => setJobFilter("open")}
-                                    className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
-                                        jobFilter === "open" 
-                                            ? "bg-white text-gray-800 border-l-4 border-blue-600" 
-                                            : "text-black hover:bg-gray-200"
-                                    }`}
-                                >
-                                    Open Jobs
-                                </button>
-                                <button
-                                    onClick={() => setJobFilter("closed")}
-                                    className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                            >
+                                All Jobs ({jobs.length})
+                            </button>
+                            <button
+                                onClick={() => setJobFilter("open")}
+                                className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                                    jobFilter === "open" 
+                                        ? "bg-white text-gray-800 border-l-4 border-blue-600" 
+                                        : "text-black hover:bg-gray-200"
+                                }`}
+                            >
+                                Open Jobs
+                            </button>
+                            <button
+                                onClick={() => setJobFilter("closed")}
+                                className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                                         jobFilter === "closed" 
-                                            ? "bg-white text-gray-800 border-l-4 border-blue-600" 
-                                            : "text-black hover:bg-gray-200"
-                                    }`}
-                                >
-                                    Closed Jobs
-                                </button>
-                            </div>
+                                        ? "bg-white text-gray-800 border-l-4 border-blue-600" 
+                                        : "text-black hover:bg-gray-200"
+                                }`}
+                            >
+                                Closed Jobs
+                            </button>
                         </div>
+                    </div>
 
                     {/* Main Content */}
                     <div className="flex-1">
-                        <div className="mb-6 text-gray-800 text-center p-3 bg-white max-w-3xl mx-auto">
+                        <div className="mb-6 text-black text-center p-3 bg-white max-w-3xl mx-auto">
                             <h1 className="text-2xl font-bold py-4">My Posted Jobs</h1>
                             <p>An overview of all your current and past job postings. Click View Job Details to explore applications, candidates, and interview rounds.</p>
                         </div>
@@ -372,7 +372,7 @@ export default function JobListsPage() {
                                         <div className="flex items-center justify-between">
                                             {/* Left side - Job info */}
                                             <div className="flex-1">
-                                                <div className="bg-gray-200 text-black rounded-lg px-6 py-4 inline-block min-w-[400px]">
+                                                <div className="bg-gray-200 text-black rounded-lg px-4 py-2 inline-block min-w-[400px]">
                                                     <div className="flex items-center space-x-5">
                                                         <div className="bg-white text-black rounded-full w-8 h-8 flex items-center justify-center">
                                                             {index + 1}
@@ -401,7 +401,7 @@ export default function JobListsPage() {
 
                                             <div className="flex items-center space-x-2">
                                                 <Link href={`/joblists/jobdetails-hire-manager/${job._id}`}>
-                                                    <button className="bg-black hover:bg-gray-600 text-white px-6 py-2 rounded-md transition-colors duration-200">
+                                                    <button className="bg-black hover:bg-gray-600 text-white px-6 py-2 rounded-md transition-colors duration-200 cursor-pointer">
                                                         View Job Details
                                                     </button>
                                                 </Link>
@@ -415,26 +415,26 @@ export default function JobListsPage() {
                 </div>
 
                 <div className='mt-20 px-14'>
-                    <div className="mt-16 bg-gray-50 border border-gray-200 text-black rounded-xl p-12">
+                    <div className="mt-16 bg-gray-800 border border-gray-200 text-white rounded-xl p-12">
                         <h2 className="text-2xl font-bold text-center mb-12">Your Hiring Journey in Numbers</h2>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                             <div className="text-center">
                             <div className="text-3xl font-bold mb-2">{(jobs.length)}</div>
-                            <div className="text-black">Total Job Posts</div>
+                            <div className="text-white">Total Job Posts</div>
                             </div>
                             <div className="text-center">
                             <div className="text-3xl font-bold mb-2">
                                 {Object.values(applicationCounts).reduce((total, count) => total + count, 0)}
                             </div>
-                            <div className="text-black">Applications Received</div>
+                            <div className="text-white">Applications Received</div>
                             </div>
                             <div className="text-center">
                             <div className="text-3xl font-bold mb-2">100%</div>
-                            <div className="text-black">Response Rate</div>
+                            <div className="text-white">Response Rate</div>
                             </div>
                             <div className="text-center">
                             <div className="text-3xl font-bold mb-2">24/7</div>
-                            <div className="text-black">Platform Availability</div>
+                            <div className="text-white">Platform Availability</div>
                             </div>
                         </div>
                     </div>
@@ -470,9 +470,9 @@ export default function JobListsPage() {
                             </div>
                         </div>
                     </div>
-                    <div className="mt-16 bg-gray-50 border border-gray-200 text-black rounded-xl p-12 text-center">
+                    <div className="mt-16 bg-gray-800 border border-gray-200 text-white rounded-xl p-12 text-center">
                         <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Hiring Process?</h2>
-                        <p className="text-black mb-8 max-w-2xl mx-auto">
+                        <p className="text-white mb-8 max-w-2xl mx-auto">
                             Join hundreds of companies already using EasyHireDesk to find their perfect candidates
                         </p>
                         <div className="flex gap-4 justify-center">

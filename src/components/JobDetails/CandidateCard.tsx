@@ -69,7 +69,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
         <button
           onClick={() => onUpdateStatus(candidate._id, "selected", currentRound)}
           disabled={isUpdating}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
             status === 'selected'
               ? 'bg-green-600 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-green-100 hover:text-green-700'
@@ -80,7 +80,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
         <button
           onClick={() => onUpdateStatus(candidate._id, "rejected", currentRound)}
           disabled={isUpdating}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
             status === 'rejected' 
               ? 'bg-red-600 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-red-100 hover:text-red-700'
@@ -110,7 +110,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
                           <span className="text-gray-900">{response.value.fileName}</span>
                           <button
                             onClick={() => onViewFile(candidate._id, response.fieldLabel)}
-                            className="bg-black text-white px-3 py-1 rounded-md text-sm hover:text-white hover:bg-gray-500 transition-colors"
+                            className="bg-black text-white px-3 py-1 rounded-md text-sm hover:text-white hover:bg-gray-500 transition-colors cursor-pointer"
                           >
                             View File
                           </button>

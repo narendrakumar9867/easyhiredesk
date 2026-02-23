@@ -19,7 +19,7 @@ const CandidateFilter: React.FC<CandidateFilterProps> = ({
       <div className="space-y-2">
         <button
           onClick={() => onFilterChange("all")}
-          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
             candidateFilter === "all"
               ? "bg-white text-gray-800 border-l-4 border-blue-600"
               : "text-black hover:bg-gray-200"
@@ -29,7 +29,7 @@ const CandidateFilter: React.FC<CandidateFilterProps> = ({
         </button>
         <button
           onClick={() => onFilterChange("selected")}
-          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
             candidateFilter === "selected"
               ? "bg-white text-gray-800 border-l-4 border-blue-600"
               : "text-black hover:bg-gray-200"
@@ -39,7 +39,7 @@ const CandidateFilter: React.FC<CandidateFilterProps> = ({
         </button>
         <button
           onClick={() => onFilterChange("pending")}
-          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
             candidateFilter === "pending"
               ? "bg-white text-gray-800 border-l-4 border-blue-600"
               : "text-black hover:bg-gray-200"
@@ -49,7 +49,7 @@ const CandidateFilter: React.FC<CandidateFilterProps> = ({
         </button>
         <button
           onClick={() => onFilterChange("rejected")}
-          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
             candidateFilter === "rejected"
               ? "bg-white text-gray-800 border-l-4 border-blue-600"
               : "text-black hover:bg-gray-200"

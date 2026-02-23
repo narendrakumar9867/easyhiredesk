@@ -131,10 +131,10 @@ export default function Navbar() {
                 <section className="hidden md:flex items-center gap-8 px-7">
                     {!authUser ? (
                         <>
-                            <button onClick={() => setShowLogin(true)} className="h-fit text-neutral-400 transition-all hover:text-black/90">
+                            <button onClick={() => setShowLogin(true)} className="h-fit text-neutral-400 transition-all hover:text-black/90 cursor-pointer">
                                 Login
                             </button>
-                            <button onClick={() => setshowSingUp(true)} className="h-fit text-neutral-400 transition-all hover:border-black hover:text-black/90 rounded-xl border-2 border-neutral-400 px-4 py-2">
+                            <button onClick={() => setshowSingUp(true)} className="h-fit text-neutral-400 transition-all hover:border-black hover:text-black/90 rounded-xl border-2 border-neutral-400 px-4 py-2 cursor-pointer">
                                 SignUp
                             </button>
                         </>
@@ -142,7 +142,7 @@ export default function Navbar() {
                         <div className="relative">
                             <button
                                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                                className="flex items-center gap-2 p-2 rounded-full transition-all"
+                                className="flex items-center gap-2 p-2 rounded-full transition-all cursor-pointer"
                             >
                                 {authUser.profilePic ? (
                                     <img 
@@ -156,7 +156,7 @@ export default function Navbar() {
                             </button>
 
                             {showProfileDropdown && (
-                                <div className="absolute right-0 top-12 w-40 bg-white rounded-lg shadow-lg py-2 z-50">
+                                <div className="absolute right-0 top-12 w-40 bg-white rounded-lg shadow-lg py-2 z-50 cursor-pointer">
 
                                         <Link
                                             href="/profile"

@@ -22,7 +22,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
     if (jobId) {
       const token = localStorage.getItem('token');
       window.open(
-        `/edit-round?jobId=${jobId}&roundNumber=${currentRound}&token=${token}`,
+        `/edit-round?jobId=${jobId}&roundNumber=${currentRound}&${token}`,
         '_blank'
       );
     } else {
@@ -49,11 +49,11 @@ const QuickActions: React.FC<QuickActionsProps> = ({
               
               <h4 className="text-lg font-semibold text-gray-900 mb-2">Export Applications</h4>
               <p className="text-sm text-gray-600 mb-6">
-                Download candidate data in CSV format
+                Download candidate data in Excel format
               </p>
               
               <button 
-                className="bg-black text-white px-8 py-2.5 rounded-lg hover:bg-white hover:text-black border transition-all duration-200 font-medium text-sm"
+                className="bg-black text-white px-8 py-2.5 rounded-lg hover:bg-white hover:text-black border transition-all duration-200 font-medium text-sm cursor-pointer"
                 onClick={() => onExport(currentRound)}
               >
                 Export CSV
@@ -74,8 +74,8 @@ const QuickActions: React.FC<QuickActionsProps> = ({
               </p>
               
               <button
-                className="bg-black text-white px-8 py-2.5 rounded-lg hover:bg-white hover:text-black border transition-all duration-200 font-medium text-sm"
-                onClick={handleEdit} // Changed from onEditRound to handleEdit
+                className="bg-black text-white px-8 py-2.5 rounded-lg hover:bg-white hover:text-black border transition-all duration-200 font-medium text-sm cursor-pointer"
+                onClick={handleEdit}
               >
                 Edit
               </button>
@@ -95,7 +95,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
               </p>
               
               <Link href="/contact">
-                <button className="bg-black text-white px-8 py-2.5 rounded-lg hover:bg-white hover:text-black border transition-all duration-200 font-medium text-sm">
+                <button className="bg-black text-white px-8 py-2.5 rounded-lg hover:bg-white hover:text-black border transition-all duration-200 font-medium text-sm cursor-pointer">
                   Get Support
                 </button>
               </Link>
