@@ -183,6 +183,8 @@ export const useAuth = create<AuthStore>()(
                     if (token) {
                         localStorage.setItem("token", token);
                         localStorage.setItem("authUser", JSON.stringify(res.data));
+                        // Set JWT in cookies for middleware
+                        document.cookie = `jwt=${token}; path=/; max-age=86400`;
                         set({ token });
                     }
                     
@@ -204,6 +206,8 @@ export const useAuth = create<AuthStore>()(
                     if (token) {
                         localStorage.setItem("token", token);
                         localStorage.setItem("authUser", JSON.stringify(res.data));
+                        // Set JWT in cookies for middleware
+                        document.cookie = `jwt=${token}; path=/; max-age=86400`;
                         set({ token });
                     }
                     
@@ -232,6 +236,8 @@ export const useAuth = create<AuthStore>()(
                     // Always clear local data
                     localStorage.removeItem("token");
                     localStorage.removeItem("authUser");
+                    // Clear JWT cookie
+                    document.cookie = "jwt=; path=/; max-age=0";
                     set({ authUser: null, token: null });
                     toast.success("Logged out successfully.");
                 }
