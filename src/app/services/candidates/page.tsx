@@ -1,316 +1,337 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+
+import Link from "next/link";
+import { useEffect } from "react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  Bell,
+  BriefcaseBusiness,
+  CheckCircle2,
+  ClipboardCheck,
+  FileSearch,
+  ShieldCheck,
+  UserRound,
+  Workflow,
+} from "lucide-react";
+
+import Footer from "@/src/components/Footer";
+import Navbar from "@/src/components/Navbar";
 import { useAuth } from "@/src/hooks/useAuth";
-import { axiosInstance } from "@/src/utils/axios";
-import Navbar from '@/src/components/Navbar';
-import FooterLogin from '@/src/components/FooterLogin';
-import { Application, Job } from '@/src/types/Job';
-import { Check, X, Clock, Download, Search, Filter } from 'lucide-react';
-import * as XLSX from 'xlsx';
+
+const stats = [
+  { value: "1", label: "candidate dashboard for applications" },
+  { value: "4", label: "clear stages from apply to decision" },
+  { value: "100%", label: "focus on status visibility" },
+];
+
+const candidateHighlights = [
+  {
+    title: "Discover relevant openings",
+    description:
+      "Browse active roles with clearer job details so you can decide faster where to apply.",
+    icon: FileSearch,
+  },
+  {
+    title: "Apply with less friction",
+    description:
+      "Submit your profile and move into round-based hiring without needing disconnected steps.",
+    icon: BriefcaseBusiness,
+  },
+  {
+    title: "Track progress confidently",
+    description:
+      "See your status updates and round movement so you always know where your application stands.",
+    icon: BadgeCheck,
+  },
+];
+
+const journeySteps = [
+  {
+    number: "01",
+    title: "Find and review the job",
+    description:
+      "Explore available job posts, review role requirements, and identify opportunities that match your profile.",
+    icon: FileSearch,
+    tags: ["Job discovery", "Role details", "Quick filtering"],
+  },
+  {
+    number: "02",
+    title: "Submit your application",
+    description:
+      "Apply through a structured flow where your details are captured and aligned with the hiring process.",
+    icon: ClipboardCheck,
+    tags: ["Apply flow", "Profile details", "Submission tracking"],
+  },
+  {
+    number: "03",
+    title: "Move through interview rounds",
+    description:
+      "When selected, your status updates by round so you can follow progression from one stage to the next.",
+    icon: UserRound,
+    tags: ["Round progression", "Selection updates", "Status clarity"],
+  },
+  {
+    number: "04",
+    title: "Stay updated and prepared",
+    description:
+      "Get communication updates and prepare for upcoming steps with better visibility into decisions.",
+    icon: Bell,
+    tags: ["Notifications", "Interview prep", "Decision visibility"],
+  },
+];
+
+const supportAreas = [
+  {
+    title: "Application tracking",
+    points: [
+      "Monitor status changes from pending to selected or rejected.",
+      "Understand round-by-round outcomes in one place.",
+      "Avoid confusion caused by scattered updates.",
+    ],
+    icon: Workflow,
+  },
+  {
+    title: "Communication clarity",
+    points: [
+      "Get clearer updates tied to your actual stage.",
+      "Reduce uncertainty around next interview steps.",
+      "Stay aligned with hiring decisions without manual follow-ups.",
+    ],
+    icon: Bell,
+  },
+  {
+    title: "Candidate confidence",
+    points: [
+      "Know exactly where your application is in the process.",
+      "Approach each round with better context.",
+      "Use one structured experience across multiple job applications.",
+    ],
+    icon: CheckCircle2,
+  },
+];
+
+const principles = [
+  "Candidates should be able to understand progress without chasing updates.",
+  "Application flow and round status should stay connected end to end.",
+  "A transparent process improves both candidate trust and hiring outcomes.",
+];
 
 export default function CandidatePage() {
-  const { authUser, token } = useAuth();
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [filteredApplications, setFilteredApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'selected' | 'rejected' | 'in-progress'>('all');
+  const { authUser, initializeAuth, checkAuth, isCheckingAuth } = useAuth();
+  const isCandidate = authUser?.role === "candidate";
 
-  // Fetch candidate's applications
   useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        if (!token) {
-          setLoading(false);
-          return;
-        }
+    initializeAuth();
 
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        };
-
-        const response = await axiosInstance.get("/jobs/my-applications", config);
-        const apps = response.data.applications || [];
-        setApplications(apps);
-        setFilteredApplications(apps);
-      } catch (error) {
-        console.error("Error fetching applications:", error);
-        setApplications([]);
-        setFilteredApplications([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (token) {
-      fetchApplications();
+    const token = localStorage.getItem("token");
+    if (token && !authUser) {
+      checkAuth();
     }
-  }, [token]);
-
-  // Handle search and filter
-  useEffect(() => {
-    let filtered = applications;
-
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(app =>
-        app.jobId?.jobTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.jobId?.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.jobId?.location?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(app => app.status === statusFilter);
-    }
-
-    setFilteredApplications(filtered);
-  }, [searchQuery, statusFilter, applications]);
-
-  // Get status badge styling
-  const getStatusStyles = (status: string) => {
-    switch (status) {
-      case 'selected':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-yellow-100 text-yellow-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'selected':
-        return <Check className="w-4 h-4" />;
-      case 'rejected':
-        return <X className="w-4 h-4" />;
-      case 'in-progress':
-        return <Clock className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
-  };
-
-  // Export to Excel
-  const handleExport = () => {
-    const exportData = filteredApplications.map(app => ({
-      'Job Title': app.jobId?.jobTitle || 'N/A',
-      'Company': app.jobId?.companyName || 'N/A',
-      'Location': app.jobId?.location || 'N/A',
-      'Status': app.status,
-      'Applied Date': new Date(app.submittedAt).toLocaleDateString(),
-      'Applied Time': new Date(app.submittedAt).toLocaleTimeString()
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Applications');
-    XLSX.writeFile(workbook, `my-applications-${new Date().toISOString().split('T')[0]}.xlsx`);
-  };
-
-  // Get status counts
-  const statusCounts = {
-    pending: applications.filter(a => a.status === 'pending').length,
-    selected: applications.filter(a => a.status === 'selected').length,
-    rejected: applications.filter(a => a.status === 'rejected').length,
-    'in-progress': applications.filter(a => a.status === 'in-progress').length,
-  };
-
-  if (loading) {
-    return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-lg text-gray-600">Loading your applications...</div>
-        </div>
-        <FooterLogin />
-      </div>
-    );
-  }
+  }, [authUser, checkAuth, initializeAuth]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Navbar />
-
-      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Applications</h1>
-          <p className="text-gray-600">Track your job applications and their status</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-gray-600 text-sm font-medium mb-2">Total Applications</div>
-            <div className="text-3xl font-bold text-gray-900">{applications.length}</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
-            <div className="text-gray-600 text-sm font-medium mb-2">Pending</div>
-            <div className="text-3xl font-bold text-yellow-600">{statusCounts.pending}</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
-            <div className="text-gray-600 text-sm font-medium mb-2">Selected</div>
-            <div className="text-3xl font-bold text-green-600">{statusCounts.selected}</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-            <div className="text-gray-600 text-sm font-medium mb-2">Rejected</div>
-            <div className="text-3xl font-bold text-red-600">{statusCounts.rejected}</div>
-          </div>
-        </div>
-
-        {/* Search and Filter Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            {/* Search */}
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by job title, company, or location..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Status Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="selected">Selected</option>
-                <option value="rejected">Rejected</option>
-                <option value="in-progress">In Progress</option>
-              </select>
-            </div>
-
-            {/* Export Button */}
-            <button
-              onClick={handleExport}
-              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Export to Excel
-            </button>
-          </div>
-
-          {/* Results count */}
-          <div className="mt-4 text-sm text-gray-600">
-            Showing {filteredApplications.length} of {applications.length} applications
-          </div>
-        </div>
-
-        {/* Applications List */}
-        <div className="space-y-4">
-          {filteredApplications.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-12 text-center">
-              <p className="text-gray-600 mb-4">
-                {applications.length === 0
-                  ? "You haven't applied to any jobs yet."
-                  : "No applications match your filters."}
-              </p>
-              {applications.length === 0 && (
-                <a href="/joblists" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
-                  Browse Jobs
-                </a>
-              )}
-            </div>
-          ) : (
-            filteredApplications.map((application, index) => (
-              <div
-                key={application._id}
-                className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6"
-              >
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  {/* Job Info */}
-                  <div className="flex-1">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                          {application.jobId?.jobTitle || 'Job Title N/A'}
-                        </h3>
-                        <div className="space-y-1 text-sm text-gray-600">
-                          <p>
-                            <span className="font-medium">Company:</span> {application.jobId?.companyName || 'N/A'}
-                          </p>
-                          <p>
-                            <span className="font-medium">Location:</span> {application.jobId?.location || 'N/A'}
-                          </p>
-                          <p>
-                            <span className="font-medium">Applied:</span>{' '}
-                            {new Date(application.submittedAt).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}{' '}
-                            at{' '}
-                            {new Date(application.submittedAt).toLocaleTimeString('en-US', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status Badge */}
-                  <div className="flex flex-col md:items-end gap-3">
-                    <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium ${getStatusStyles(application.status)}`}>
-                      {getStatusIcon(application.status)}
-                      <span className="capitalize">{application.status}</span>
-                    </div>
-
-                    {/* Round Statuses */}
-                    {application.roundStatuses && application.roundStatuses.length > 0 && (
-                      <div className="text-sm">
-                        <p className="text-gray-600 font-medium mb-2">Rounds:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {application.roundStatuses.map((round) => (
-                            <span
-                              key={round.round}
-                              className={`px-2 py-1 rounded text-xs font-medium ${getStatusStyles(round.status)}`}
-                            >
-                              R{round.round}: {round.status}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* View Details Link */}
-                  <div className="md:pl-4">
-                    <a
-                      href={`/joblists/jobdetails-candidate/${application.jobId?._id}`}
-                      className="inline-block bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
-                    >
-                      View Details
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+    <div className="min-h-screen bg-white text-neutral-900">
+      <div className="fixed top-0 left-0 z-50 w-full bg-white shadow-md">
+        <Navbar />
       </div>
 
-      <FooterLogin />
+      <main className="pt-24">
+        <section className="px-4 pb-16 pt-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-5xl">
+            <div className="space-y-6">
+              <span className="inline-flex items-center rounded-full border border-neutral-200 px-4 py-1 text-sm font-medium text-neutral-600">
+                For Candidates
+              </span>
+
+              <div className="space-y-4">
+                <h1 className="max-w-3xl text-4xl font-serif tracking-tight sm:text-4xl lg:text-6xl">
+                  A clearer candidate journey from discovering jobs to tracking final decisions.
+                </h1>
+                <p className="max-w-2xl text-base leading-7 text-neutral-600 sm:text-lg">
+                  This page focuses on how candidates experience EasyhireDesk. From finding opportunities to applying and moving through rounds, the platform is designed to make every stage easier to understand.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                {!isCheckingAuth && isCandidate && (
+                  <Link
+                    href="/joblists"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                  >
+                    Browse jobs
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                )}
+                {!isCheckingAuth && isCandidate ? (
+                  <Link
+                    href="/profile"
+                    className="inline-flex items-center justify-center rounded-2xl border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-800 transition hover:border-neutral-900 hover:text-black"
+                  >
+                    Manage candidate profile
+                  </Link>
+                ) : (
+                  <Link
+                    href="/auth/signup"
+                    className="inline-flex items-center justify-center rounded-2xl border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-800 transition hover:border-neutral-900 hover:text-black"
+                  >
+                    Create candidate account
+                  </Link>
+                )}
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                {stats.map((stat) => (
+                  <div key={stat.label} className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-5">
+                    <div className="text-3xl font-semibold text-black">{stat.value}</div>
+                    <p className="mt-2 text-sm text-neutral-600">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-8 rounded-[2rem] border border-neutral-200 bg-neutral-50 p-6">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="mt-1 h-5 w-5 flex-none text-black" />
+                <div>
+                  <h2 className="text-lg font-semibold text-black">Built for transparent candidate progression</h2>
+                  <p className="mt-2 text-sm leading-6 text-neutral-700">
+                    Job visibility, application status, and round updates stay connected so candidates can move forward with better clarity.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-y border-neutral-200 bg-neutral-50 px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                What candidates can do here
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+                Candidate actions are structured around real hiring progression.
+              </h2>
+            </div>
+
+            <div className="mt-10 grid gap-5 lg:grid-cols-3">
+              {candidateHighlights.map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <article
+                    key={item.title}
+                    className="rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                  >
+                    <div className="inline-flex rounded-2xl bg-neutral-100 p-3 text-black">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <h3 className="mt-5 text-xl font-semibold">{item.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-neutral-600">{item.description}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                  Candidate journey
+                </p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+                  One clear path from application to interview decisions.
+                </h2>
+              </div>
+              <p className="max-w-xl text-sm leading-6 text-neutral-600">
+                The candidate service follows the same connected model as the platform: discover jobs, submit applications, track rounds, and stay informed.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-5 lg:grid-cols-4">
+              {journeySteps.map((step) => {
+                const Icon = step.icon;
+
+                return (
+                  <article
+                    key={step.number}
+                    className="rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex rounded-2xl bg-black p-3 text-white">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <span className="text-sm font-semibold text-neutral-400">{step.number}</span>
+                    </div>
+                    <h3 className="mt-6 text-xl font-semibold">{step.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-neutral-600">{step.description}</p>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      {step.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 pb-16 sm:px-6 lg:px-8">
+          <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="grid gap-5 md:grid-cols-3 lg:grid-cols-1">
+              {supportAreas.map((area) => {
+                const Icon = area.icon;
+
+                return (
+                  <article key={area.title} className="rounded-[2rem] border border-neutral-200 bg-neutral-50 p-8">
+                    <div className="inline-flex rounded-2xl bg-white p-3 text-black shadow-sm">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <h3 className="mt-5 text-2xl font-semibold">{area.title}</h3>
+                    <div className="mt-6 space-y-3">
+                      {area.points.map((point) => (
+                        <div key={point} className="flex gap-3">
+                          <span className="mt-2 h-2 w-2 rounded-full bg-black" />
+                          <p className="text-sm leading-6 text-neutral-600">{point}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="rounded-[2rem] bg-black p-8 text-white">
+              <div className="inline-flex rounded-full border border-white/15 px-4 py-1 text-sm text-white/75">
+                Candidate principles
+              </div>
+              <h2 className="mt-5 text-3xl font-semibold tracking-tight">
+                Better candidate experience comes from transparency, not guesswork.
+              </h2>
+              <div className="mt-8 space-y-4">
+                {principles.map((principle) => (
+                  <div key={principle} className="flex gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-white" />
+                    <p className="text-sm leading-6 text-white/80">{principle}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <Footer />
     </div>
   );
 }
