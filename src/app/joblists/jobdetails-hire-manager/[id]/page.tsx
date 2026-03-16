@@ -19,7 +19,7 @@ import {
   RoundTabs,
   QuickActions
 } from '@/src/components/JobDetails';
-import { FileText, Loader2, Lock, LockIcon, LockOpen, Trash2 } from 'lucide-react';
+import { FileText, Loader2, Lock, LockIcon, LockOpen, ShieldCheck, Trash2 } from 'lucide-react';
 
 const JobDetailsHireManager: React.FC = () => {
   const params = useParams();
@@ -110,34 +110,39 @@ const JobDetailsHireManager: React.FC = () => {
     switch (activeTab) {
       case 'Job details':
         return (
-          <div className="bg-white rounded-lg p-6 mb-6">
-            <CompanyInfo job={jobState!} />
-            <JobDescription 
-              aboutJob={jobState?.aboutJob || ""}
-              jobId={jobId}
-            />
-            <ApplicationLink jobId={jobId} />
+          <div className="space-y-10">
+            <section className="rounded-2xl bg-white px-5 sm:px-7">
+              <CompanyInfo job={jobState!} />
+            </section>
 
-            {/* Job Status Info Section */}
-            <div className='mt-8 bg-white rounded-xl p-10 border-2 border-gray-200 text-center items-center'>
-              <p className='text-black'>
-                Manage your jobs active lifecycle with full control.
-                <br />
-                Schedule an automatic close for smoother hiring workflows, or end it instantly when the position is filled.
-                <br />
-                Keep your listings updated and avoid confusion for candidates.
-                Smart scheduling helps maintain an organized and transparent recruitment process.
-              </p>
-            </div>
+            <section className="rounded-2xl bg-white px-5 sm:px-7">
+              <JobDescription 
+                aboutJob={jobState?.aboutJob || ""}
+                jobId={jobId}
+              />
+            </section>
 
-            {/* Job Status Management */}
-            <div className="mt-6 p-4 bg-white rounded-lg px-40">
-              <h4 className="text-lg font-semibold text-black mb-2 text-center">Job Status</h4>
+            <section className="rounded-2xl bg-white px-5 sm:px-7">
+              <ApplicationLink jobId={jobId} />
+            </section>
+
+            <section className="border-l-2 border-neutral-300 pl-4 sm:pl-6">
+              <div className="mb-5 flex items-start gap-3">
+                <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+                  <ShieldCheck className="h-5 w-5 text-black" />
+                </div>
+                <div>
+                  <h4 className="text-xl font-semibold text-black">Job status management</h4>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+                    Control whether the role is accepting applications, schedule an automatic close, or reopen it when hiring resumes.
+                  </p>
+                </div>
+              </div>
 
               {isJobClosed ? (
-                <div className="bg-gray-200 rounded-xl p-6">
-                  <div className="flex items-center justify-center mb-4">
-                    <div className="bg-white border rounded-full p-3 mr-3">
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50/70 p-6">
+                  <div className="mb-4 flex items-center justify-center">
+                    <div className="mr-3 rounded-full border bg-neutral-50 p-3">
                       <Lock className='w-4 h-4' />
                     </div>
                     <div>
@@ -145,7 +150,7 @@ const JobDetailsHireManager: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="bg-white border border-black rounded-lg p-4 mb-4">
+                  <div className="mb-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
                     <div className="flex items-center justify-center text-gray-700">
                       <LockIcon className="w-5 h-5 mr-2 text-gray-500" />
                       <span className="text-sm">
@@ -164,12 +169,12 @@ const JobDetailsHireManager: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col items-center">
-                    <p className="text-gray-600 text-sm mb-4 text-center max-w-md">
+                    <p className="mb-4 max-w-md text-center text-sm text-gray-600">
                       This job is currently not accepting applications. Click below to reopen and start receiving applications again.
                     </p>
                     <button
                       onClick={handleReopenJob}
-                      className="bg-black text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-all font-semibold shadow-md hover:shadow-lg flex items-center"
+                      className="flex items-center rounded-xl bg-black px-6 py-3 font-semibold text-white transition hover:bg-neutral-800"
                     >
                       <LockOpen className="w-5 h-5 mr-2" />
                       Reopen Job
@@ -177,60 +182,56 @@ const JobDetailsHireManager: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="bg-gray-200 rounded-xl p-4">
-                  <p className='text-black mb-3 text-center'>
-                    Schedule when this job should automatically close or close it immediately.
-                  </p>
-
-                  {/* Schedule Close Section */}
-                  <div className="mb-4 p-3 bg-white rounded-lg items-center">
-                    <h5 className="font-medium text-gray-800 mb-2">Schedule Automatic Close</h5>
-                    <div className='flex items-center space-x-2 mb-3'>
+                <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+                  <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 p-5">
+                    <h5 className="mb-3 text-base font-semibold text-black">Schedule automatic close</h5>
+                    <div className='mb-3 flex flex-col gap-3 sm:flex-row sm:items-end'>
                       <div>
-                        <label className="block text-sm text-gray-600 mb-1">Close Date:</label>
+                        <label className="mb-1 block text-sm text-gray-600">Close Date</label>
                         <input
                           type="date"
                           value={jobCloseDate}
                           onChange={(e) => setJobCloseDate(e.target.value)}
                           min={new Date().toISOString().split('T')[0]}
-                          className="px-3 py-2 border border-gray-300 rounded-md cursor-pointer"
+                          className="rounded-lg border border-gray-300 px-3 py-2 cursor-pointer"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm text-gray-600 mb-1">Close Time:</label>
+                        <label className="mb-1 block text-sm text-gray-600">Close Time</label>
                         <input
                           type="time"
                           value={jobCloseTime}
                           onChange={(e) => setJobCloseTime(e.target.value)}
-                          className="px-3 py-2 border border-gray-300 rounded-md cursor-pointer"
+                          className="rounded-lg border border-gray-300 px-3 py-2 cursor-pointer"
                         />
                       </div>
-                      <div className="pt-6">
+                      <div>
                         <button
                           onClick={handleCloseJob}
-                          className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors cursor-pointer"
+                          className="rounded-lg bg-black px-4 py-2 text-white transition-colors hover:bg-gray-700 cursor-pointer"
                         >
                           Schedule Close
                         </button>
                       </div>
                     </div>
                     {jobState?.closeDate && !isJobClosed && (
-                      <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border-l-4 border-orange-400">
+                      <div className="rounded-lg border-l-4 border-orange-400 bg-orange-50 p-3 text-sm text-orange-600">
                         Scheduled to close: {new Date(jobState.closeDate).toLocaleString()}
                       </div>
                     )}
                   </div>
 
-                  {/* Immediate Close Section */}
-                  <div className="p-3 bg-gray-200 rounded-lg">
-                    <h5 className="font-medium text-black mb-2">Close Immediately</h5>
-                    <div className='flex items-center justify-between'>
-                      <p className="text-black text-sm">
-                        Close this job right now. This action cannot be undone.
+                  <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 p-5">
+                    <h5 className="mb-3 text-base font-semibold text-black">Close immediately</h5>
+                    <div className='flex h-full flex-col gap-4'>
+                      <p className="text-sm leading-6 text-neutral-600">
+                        Stop accepting applications right away if the role is filled or no longer active.
+
                       </p>
+
                       <button
                         onClick={handleImmediateClose}
-                        className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors cursor-pointer"
+                        className="w-fit rounded-lg bg-black px-4 py-2 text-white transition-colors hover:bg-gray-600 cursor-pointer"
                       >
                         Close Now
                       </button>
@@ -238,51 +239,40 @@ const JobDetailsHireManager: React.FC = () => {
                   </div>
                 </div>
               )}
-            </div>
+            </section>
 
-            {/* Delete Job Warning */}
-            <div className='mt-8 bg-white rounded-xl p-10 border-2 border-gray-200 text-center items-center'>
-              <p className='text-black'>
-                This action is irreversible, please proceed with caution.
-                <br />
-                Deleting this job will remove all associated applications, interview rounds, and uploaded files permanently.
-                <br />
-                Once deleted, this data cannot be recovered.
-                Make sure you have backed up any important information before confirming deletion.
-              </p>
-            </div>
+            <section className="border-l-2 border-red-200 pl-4 sm:pl-6">
+              <div className="rounded-2xl border border-red-200 bg-red-50/70 p-4 sm:p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="mb-2 inline-flex items-center rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
+                      Danger zone
+                    </div>
+                    <p className="text-sm leading-6 text-red-800">
+                      Permanently removes this job and all related applications, rounds, and uploaded files.
+                    </p>
+                  </div>
 
-            {/* Delete Job Section */}
-            <div className="mt-12 p-4 bg-white max-w-3xl mx-auto">
-              <div className="text-center mb-4">
-                <h4 className="text-xl font-bold text-black mb-2">⚠️ Danger Zone</h4>
-                <p className="text-black text-sm">
-                  Disclaimer: Once you delete this job, there is no going back.
-                </p>
+                  <button
+                    onClick={() => handleDeleteJob(candidateResponsesState.length, tabs.length - 1)}
+                    disabled={isDeleting}
+                    className="inline-flex shrink-0 items-center justify-center rounded-xl bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-700 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Job
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-
-              <div className="bg-white rounded-lg p-4 mb-4 border border-gray-200">
-                <p className="font-semibold text-gray-800 mb-2">You are about to erase this job from the system permanently.</p>
-              </div>
-
-              <button
-                onClick={() => handleDeleteJob(candidateResponsesState.length, tabs.length - 1)}
-                disabled={isDeleting}
-                className="w-full bg-black hover:bg-gray-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 className="animate-spin mr-2 h-5 w-5" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-5 h-5 mr-2" />
-                    Delete Job Permanently
-                  </>
-                )}
-              </button>
-            </div>
+            </section>
           </div>
         );
 
@@ -294,7 +284,7 @@ const JobDetailsHireManager: React.FC = () => {
 
           return (
             <div className="space-y-4">
-              <div className="bg-white rounded-lg p-4 mb-2">
+              <div className="rounded-2xl border border-neutral-200 bg-white p-5">
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">
@@ -340,7 +330,7 @@ const JobDetailsHireManager: React.FC = () => {
               </div>
 
               {candidatesForRound.length === 0 ? (
-                <div className="bg-white rounded-lg p-8 text-center">
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-8 text-center">
                   {roundNumber === 1 ? (
                     <>
                       <div className="text-gray-400 mb-4">
@@ -356,7 +346,7 @@ const JobDetailsHireManager: React.FC = () => {
                           navigator.clipboard.writeText(shareLink);
                           alert('Application link copied to clipboard!');
                         }}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                        className="rounded-lg bg-black px-4 py-2 text-white transition-colors hover:bg-neutral-800"
                       >
                         Copy Application Link
                       </button>
@@ -399,7 +389,7 @@ const JobDetailsHireManager: React.FC = () => {
   // Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+      <div className="min-h-screen bg-white py-8 px-4 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
           <div className="text-xl text-gray-600">Loading job details...</div>
@@ -411,10 +401,10 @@ const JobDetailsHireManager: React.FC = () => {
   // Error State
   if (error || !jobState) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-white py-8 px-4 flex items-center justify-center">
+        <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-8 text-center shadow-sm">
           <div className="text-xl text-red-600 mb-4">{error || "Job not found"}</div>
-          <Link href="/joblists" className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors">
+          <Link href="/joblists" className="inline-flex rounded-xl bg-black px-4 py-2 text-white hover:bg-gray-600 transition-colors">
             Back to Job Lists
           </Link>
         </div>
@@ -424,15 +414,16 @@ const JobDetailsHireManager: React.FC = () => {
 
   // Main Render
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 max-w-full">
+    <div className="flex flex-col min-h-screen bg-white max-w-full text-neutral-900">
       <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
         <Navbar />
       </div>
 
       <JobHeader jobTitle={jobState.jobTitle} />
 
-      <div className="mx-auto w-full max-w px-9 py-3 flex-1 flex gap-6">
-        <div className="flex-1">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 pb-10 sm:px-6 lg:px-8">
+
+        <div className="flex-1 pt-3">
           {/* Navigation Tabs */}
           {!loading && (
             <RoundTabs
@@ -446,7 +437,7 @@ const JobDetailsHireManager: React.FC = () => {
           {/* Content Area */}
           {activeTab.startsWith('Round ') ? (
             <>
-              <div className="flex gap-6">
+              <div className="flex flex-col gap-6 lg:flex-row">
                 {/* Filter Sidebar */}
                 <CandidateFilter
                   candidateFilter={candidateFilter}
@@ -454,7 +445,7 @@ const JobDetailsHireManager: React.FC = () => {
                 />
 
                 {/* Tab Content */}
-                <div className="flex-1 max-h-[calc(200vh-300px)] overflow-y-auto">
+                <div className="flex-1">
                   {renderTabContent()}
                 </div>
               </div>
@@ -476,7 +467,7 @@ const JobDetailsHireManager: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
+      </main>
       <FooterLogin />
     </div>
   );

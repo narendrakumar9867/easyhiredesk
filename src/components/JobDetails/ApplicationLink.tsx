@@ -15,17 +15,6 @@ const ApplicationLink: React.FC<ApplicationLinkProps> = ({ jobId }) => {
 
   return (
     <>
-      <div className='mt-8 bg-white rounded-xl p-10 border-2 border-gray-200 text-center items-center'>
-        <p className='text-black'>
-          Take your hiring beyond boundaries.
-          <br />
-          With this application link, candidates can apply from anywhere anytime.
-          Share it across platforms like LinkedIn, email, or social media.
-          <br />
-          Every application is tracked automatically in your EasyHireDesk workspace.
-        </p>
-      </div>
-
       <div className="mt-6 bg-white p-6">
         <div className="flex items-center justify-center mb-4">
           <div className="bg-blue-100 rounded-full p-3 mr-3">
