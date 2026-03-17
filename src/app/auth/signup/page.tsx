@@ -24,7 +24,7 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
     password: "",
   });
 
-  const { signup, isSigningUp } = useAuth();
+  const { signup, signupWithGoogle, isSigningUp, isGoogleSigningIn } = useAuth();
 
   const validateEmail = (email: string): boolean => {
     if(!email) {
@@ -100,6 +100,15 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
     }
   }, [formData, validateForm, signup, onClose]);
 
+  const handleGoogleSignup = useCallback(async () => {
+    try {
+      await signupWithGoogle(formData.role);
+      onClose();
+    } catch (error) {
+      console.error("Google signup failed:", error);
+    }
+  }, [formData.role, signupWithGoogle, onClose]);
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
       <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md relative">
@@ -153,6 +162,15 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
             className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50"
           >
             {isSigningUp ? "Creating account..." : "Create Account"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignup}
+            disabled={isSigningUp || isGoogleSigningIn}
+            className="w-full bg-gray-300 text-black py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+          >
+            {isGoogleSigningIn ? "Signing in with Google..." : "Sign in with Google"}
           </button>
         </form>
 

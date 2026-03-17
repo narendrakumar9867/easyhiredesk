@@ -2,6 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { axiosInstance } from "../utils/axios";
 import toast from "react-hot-toast";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { firebaseAuth } from "../utils/firebase";
+import { getAuthProviderByEmail, getCachedAuthProviderByEmail, upsertAuthProviderByEmail } from "../utils/authProviderStore";
 
 interface User {
     _id: string;
@@ -37,6 +40,7 @@ interface AuthResponse {
 interface AuthStore {
     authUser: User | null;
     isSigningUp: boolean;
+    isGoogleSigningIn: boolean;
     isLoggingIn: boolean;
     isUpdatingProfile: boolean;
     isCheckingAuth: boolean;
@@ -44,6 +48,10 @@ interface AuthStore {
     checkAuth: () => Promise<void>;
     checkSupabaseAuth: () => Promise<void>; 
     signup: (data: SignUpData) => Promise<void>;
+    signupWithGoogle: (role: string) => Promise<void>;
+    loginWithGoogle: (role: string) => Promise<void>;
+    getLoginAuthProvider: (email: string) => Promise<"email" | "google" | null>;
+    getCachedLoginAuthProvider: (email: string) => "email" | "google" | null;
     login: (data: LoginData) => Promise<void>;
     logout: () => Promise<void>;
     updateProfile: (data: UpdateProfileData) => Promise<void>;
@@ -56,6 +64,7 @@ export const useAuth = create<AuthStore>()(
         (set, get) => ({
             authUser: null,
             isSigningUp: false,
+            isGoogleSigningIn: false,
             isLoggingIn: false,
             isUpdatingProfile: false,
             isCheckingAuth: false,
@@ -187,6 +196,14 @@ export const useAuth = create<AuthStore>()(
                         document.cookie = `jwt=${token}; path=/; max-age=86400`;
                         set({ token });
                     }
+
+                    void upsertAuthProviderByEmail({
+                        email: res.data.email,
+                        role: res.data.role || data.role,
+                        authProvider: "email",
+                    }).catch((providerError) => {
+                        console.error("Auth provider sync failed after signup:", providerError);
+                    });
                     
                     set({ authUser: res.data });
                     toast.success("Account created successfully.");
@@ -195,6 +212,105 @@ export const useAuth = create<AuthStore>()(
                 } finally {
                     set({ isSigningUp: false });
                 }
+            },
+
+            signupWithGoogle: async (role: string) => {
+                set({ isGoogleSigningIn: true });
+                try {
+                    const provider = new GoogleAuthProvider();
+                    provider.setCustomParameters({
+                        prompt: "select_account",
+                    });
+
+                    const result = await signInWithPopup(firebaseAuth, provider);
+                    const firebaseToken = await result.user.getIdToken();
+
+                    const res = await axiosInstance.post<AuthResponse>("/auth/google", {
+                        token: firebaseToken,
+                        role,
+                    });
+
+                    const authToken = res.data.token;
+                    if (authToken) {
+                        localStorage.setItem("token", authToken);
+                        localStorage.setItem("authUser", JSON.stringify(res.data));
+                        document.cookie = `jwt=${authToken}; path=/; max-age=86400`;
+                        set({ token: authToken });
+                    }
+
+                    void upsertAuthProviderByEmail({
+                        email: res.data.email,
+                        role: res.data.role || role,
+                        authProvider: "google",
+                        firebaseUid: result.user.uid,
+                    }).catch((providerError) => {
+                        console.error("Auth provider sync failed after Google signup:", providerError);
+                    });
+
+                    set({ authUser: res.data });
+                    toast.success("Google sign-in successful.");
+                } catch (error: any) {
+                    const message = error?.response?.data?.message || "Google sign-in failed.";
+                    toast.error(message);
+                    throw error;
+                } finally {
+                    set({ isGoogleSigningIn: false });
+                }
+            },
+
+            loginWithGoogle: async (role: string) => {
+                set({ isGoogleSigningIn: true });
+                try {
+                    const provider = new GoogleAuthProvider();
+                    provider.setCustomParameters({
+                        prompt: "select_account",
+                    });
+
+                    const result = await signInWithPopup(firebaseAuth, provider);
+                    const firebaseToken = await result.user.getIdToken();
+
+                    const res = await axiosInstance.post<AuthResponse>("/auth/google", {
+                        token: firebaseToken,
+                        role,
+                    });
+
+                    const authToken = res.data.token;
+                    if (authToken) {
+                        localStorage.setItem("token", authToken);
+                        localStorage.setItem("authUser", JSON.stringify(res.data));
+                        document.cookie = `jwt=${authToken}; path=/; max-age=86400`;
+                        set({ token: authToken });
+                    }
+
+                    void upsertAuthProviderByEmail({
+                        email: res.data.email,
+                        role: res.data.role || role,
+                        authProvider: "google",
+                        firebaseUid: result.user.uid,
+                    }).catch((providerError) => {
+                        console.error("Auth provider sync failed after Google login:", providerError);
+                    });
+
+                    set({ authUser: res.data });
+                    toast.success("Logged in with Google.");
+                } catch (error: any) {
+                    throw error;
+                } finally {
+                    set({ isGoogleSigningIn: false });
+                }
+            },
+
+            getLoginAuthProvider: async (email: string) => {
+                try {
+                    return await getAuthProviderByEmail(email);
+                } catch (error) {
+                    console.error("Error checking auth provider:", error);
+                    return null;
+                }
+            },
+
+            getCachedLoginAuthProvider: (email: string) => {
+                return getCachedAuthProviderByEmail(email);
             },
 
             login: async (data: LoginData) => {
