@@ -6,6 +6,10 @@ const FAQ = () => {
 
     const faqItems = [
         {
+            question: "What excites you about agentic AI?",
+            answer: "Agentic AI excites us because it can autonomously screen, rank, and engage candidates end-to-end, dramatically cutting time-to-hire for managers on EasyHireDesk. It transforms the platform from a passive job board into an intelligent hiring partner that acts on behalf of both recruiters and candidates."
+        },
+        {
             question: "Why do we see lightning before we hear thunder?",
             answer: "Because light travels faster than sound. Lightning light reaches our eyes almost instantly, while thunder sound takes longer to reach our ears."
         },
