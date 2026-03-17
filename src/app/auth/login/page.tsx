@@ -78,7 +78,7 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
     return true;
   }, [formData]);
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value} = e.target;
     setFormData(prev => ({
       ...prev,
@@ -170,7 +170,7 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
           <button
             type="submit"
             disabled={isLoggingIn}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50"
           >
             {isLoggingIn ? "Logging In..." : "Log In"}
           </button>
@@ -181,7 +181,7 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
             Don't have an account?{' '}
             <button
               onClick={onSignupClick}
-              className="text-blue-600 hover:underline"
+              className="text-black hover:underline"
             >
               Sign up here
             </button>
@@ -190,8 +190,8 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
 
         <p className="text-xs text-gray-500 mt-3 text-center">
           By proceeding you accept our{" "}
-          <a href="#" className="text-blue-600">Terms of Use</a> and{" "}
-          <a href="#" className="text-blue-600">Privacy Policy</a>.
+          <a href="#" className="text-black">Terms of Use</a> and{" "}
+          <a href="#" className="text-black">Privacy Policy</a>.
         </p>
       </div>
     </div>

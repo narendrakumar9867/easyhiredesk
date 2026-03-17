@@ -150,7 +150,7 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
           <button
             type="submit"
             disabled={isSigningUp}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50"
           >
             {isSigningUp ? "Creating account..." : "Create Account"}
           </button>
@@ -161,7 +161,7 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
             Already have an account?{' '}
             <button
               onClick={onLoginClick}
-              className="text-blue-600 hover:underline"
+              className="text-black hover:underline"
             >
               Log in here
             </button>
@@ -170,8 +170,8 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
 
         <p className="text-xs text-gray-500 mt-3 text-center">
           By proceeding you accept our{" "}
-          <a href="#" className="text-blue-600">Terms of Use</a> and{" "}
-          <a href="#" className="text-blue-600">Privacy Policy</a>.
+          <a href="#" className="text-black">Terms of Use</a> and{" "}
+          <a href="#" className="text-black">Privacy Policy</a>.
         </p>
       </div>
     </div>

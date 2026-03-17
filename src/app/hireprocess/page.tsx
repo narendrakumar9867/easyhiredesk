@@ -93,26 +93,33 @@ export default function JobDetailsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br bg-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#f8f6f2] text-neutral-900">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -left-16 top-24 h-72 w-72 rounded-full bg-[#d9eadf] blur-3xl" />
+          <div className="absolute right-0 top-0 h-[24rem] w-[24rem] rounded-full bg-[#f0e3ce] blur-3xl" />
+        </div>
 
         <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
           < Navbar />
         </div>
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-28">
-            <div className="text-center mb-12">
-            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-                Add Your <span className="bg-gradient-to-r text-gray-400 bg-clip-text ">Job Details</span>
+        <div className="relative z-10 mx-auto max-w-6xl px-4 pb-16 pt-18 sm:px-6 lg:px-8">
+            <div className="mb-10 rounded-[1.75rem] border border-[#e7dfd3] bg-white/90 p-7 shadow-[0_20px_60px_-40px_rgba(0,0,0,0.45)] backdrop-blur sm:p-9">
+            <span className="inline-flex items-center rounded-full border border-[#d8ccb7] bg-[#f8f1e3] px-4 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6548]">
+              Hiring Workflow
+            </span>
+            <h1 className="mt-4 text-4xl font-serif tracking-tight text-[#1d1b18] sm:text-5xl">
+                Add Your <span className="text-[#8b6c3f]">Job Details</span>
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="mt-3 max-w-2xl text-base leading-7 text-neutral-600 sm:text-lg">
                 Create a comprehensive job posting with all the essential details
             </p>
             </div>
 
-            <div className="bg-white overflow-hidden">
-            <div className="p-8 border-b border-gray-200">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <Building2 className="w-6 h-6 mr-3 text-gray-400" />
+            <div className="overflow-hidden rounded-[1.75rem] border border-[#e8e0d4] bg-white shadow-[0_28px_60px_-44px_rgba(0,0,0,0.5)]">
+            <div className="border-b border-[#eee6da] p-8 sm:p-10">
+                <h2 className="mb-6 flex items-center text-2xl font-semibold text-[#1d1b18]">
+                <Building2 className="mr-3 h-6 w-6 text-[#8b6c3f]" />
                 Basic Information
                 </h2>
                 
@@ -126,7 +133,7 @@ export default function JobDetailsPage() {
                     value={formData.companyName}
                     onChange={(e) => handleInputChange('companyName', e.target.value)}
                     placeholder="e.g., TechCorp Inc."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-transparent transition-all duration-200"
+                    className="w-full rounded-xl border border-[#d9d1c4] bg-[#fffdfa] px-4 py-3 transition-all duration-200 placeholder:text-neutral-400 focus:border-[#8b6c3f] focus:outline-none focus:ring-2 focus:ring-[#dcc5a0]"
                     />
                 </div>
 
@@ -139,7 +146,7 @@ export default function JobDetailsPage() {
                     value={formData.jobTitle}
                     onChange={(e) => handleInputChange('jobTitle', e.target.value)}
                     placeholder="e.g., Senior Frontend Developer"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-transparent transition-all duration-200"
+                    className="w-full rounded-xl border border-[#d9d1c4] bg-[#fffdfa] px-4 py-3 transition-all duration-200 placeholder:text-neutral-400 focus:border-[#8b6c3f] focus:outline-none focus:ring-2 focus:ring-[#dcc5a0]"
                     />
                 </div>
 
@@ -154,7 +161,7 @@ export default function JobDetailsPage() {
                         value={formData.location}
                         onChange={(e) => handleInputChange('location', e.target.value)}
                         placeholder="e.g., San Francisco, CA (Remote)"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:border-transparent transition-all duration-200"
+                      className="w-full rounded-xl border border-[#d9d1c4] bg-[#fffdfa] py-3 pl-10 pr-4 transition-all duration-200 placeholder:text-neutral-400 focus:border-[#8b6c3f] focus:outline-none focus:ring-2 focus:ring-[#dcc5a0]"
                     />
                     </div>
                 </div>
@@ -170,7 +177,7 @@ export default function JobDetailsPage() {
                         value={formData.companyWebsite}
                         onChange={(e) => handleInputChange('companyWebsite', e.target.value)}
                         placeholder="https://company.com"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:border-transparent transition-all duration-200"
+                      className="w-full rounded-xl border border-[#d9d1c4] bg-[#fffdfa] py-3 pl-10 pr-4 transition-all duration-200 placeholder:text-neutral-400 focus:border-[#8b6c3f] focus:outline-none focus:ring-2 focus:ring-[#dcc5a0]"
                     />
                     </div>
                 </div>
@@ -185,7 +192,7 @@ export default function JobDetailsPage() {
                     <select
                     value={newSocialLink.platform}
                     onChange={(e) => setNewSocialLink(prev => ({ ...prev, platform: e.target.value }))}
-                    className="px-4 py-3 border border-gray-300 rounded-xl focus:border-transparent"
+                    className="rounded-xl border border-[#d9d1c4] bg-[#fffdfa] px-4 py-3 focus:border-[#8b6c3f] focus:outline-none focus:ring-2 focus:ring-[#dcc5a0]"
                     >
                     <option value="linkedin">LinkedIn</option>
                     <option value="twitter">Twitter</option>
@@ -195,11 +202,11 @@ export default function JobDetailsPage() {
                     value={newSocialLink.url}
                     onChange={(e) => setNewSocialLink(prev => ({ ...prev, url: e.target.value }))}
                     placeholder="Enter URL"
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:border-transparent"
+                    className="flex-1 rounded-xl border border-[#d9d1c4] bg-[#fffdfa] px-4 py-3 placeholder:text-neutral-400 focus:border-[#8b6c3f] focus:outline-none focus:ring-2 focus:ring-[#dcc5a0]"
                     />
                     <button
                     onClick={addSocialLink}
-                    className="px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-200 hover:text-black transition-colors duration-200 flex items-center"
+                    className="flex items-center justify-center rounded-xl bg-[#1f2321] px-6 py-3 font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#2b312e]"
                     >
                     <Plus className="w-4 h-4 mr-2" />
                     Add
@@ -207,17 +214,17 @@ export default function JobDetailsPage() {
                 </div>
 
                 {formData.socialLinks.length > 0 && (
-                    <div className="space-y-2">
+                  <div className="space-y-2">
                     {formData.socialLinks.map((link) => (
-                        <div key={link.id} className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-xl">
+                    <div key={link.id} className="flex items-center justify-between rounded-xl border border-[#ede4d7] bg-[#fbf8f2] px-4 py-3">
                         <div className="flex items-center">
                             {getSocialIcon(link.platform)}
                             <span className="ml-3 text-gray-700 capitalize">{link.platform}</span>
-                            <span className="ml-3 text-blue-600 text-sm">{link.url}</span>
+                      <span className="ml-3 text-sm text-[#2f5a8b]">{link.url}</span>
                         </div>
                         <button
                             onClick={() => removeSocialLink(link.id)}
-                            className="text-red-500 hover:text-red-700 transition-colors duration-200"
+                      className="text-red-500 transition-colors duration-200 hover:text-red-700"
                         >
                             <X className="w-4 h-4" />
                         </button>
@@ -228,20 +235,20 @@ export default function JobDetailsPage() {
                 </div>
             </div>
 
-            <div className="p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <Edit className="w-6 h-6 mr-3 text-gray-400" />
+            <div className="p-8 sm:p-10">
+              <h2 className="mb-6 flex items-center text-2xl font-semibold text-[#1d1b18]">
+              <Edit className="mr-3 h-6 w-6 text-[#8b6c3f]" />
                 About Job <span className="text-red-500 ml-1">*</span>
                 </h2>
 
-                <div className="border border-gray-300 rounded-xl overflow-hidden">
-                <div className="flex border-b border-gray-300 bg-gray-50">
+              <div className="overflow-hidden rounded-xl border border-[#ded5c9]">
+              <div className="flex border-b border-[#e8dfd2] bg-[#f7f2e9]">
                     <button
                     onClick={() => setActiveTab('edit')}
                     className={`px-6 py-3 text-sm font-medium transition-colors duration-200 flex items-center ${
                         activeTab === 'edit'
-                        ? 'bg-white border-b-2 border-black text-black'
-                        : 'text-gray-600 hover:text-gray-800'
+                  ? 'border-b-2 border-[#8b6c3f] bg-white text-[#2a241c]'
+                  : 'text-neutral-600 hover:text-neutral-800'
                     }`}
                     >
                     <Edit className="w-4 h-4 mr-2" />
@@ -251,8 +258,8 @@ export default function JobDetailsPage() {
                     onClick={() => setActiveTab('preview')}
                     className={`px-6 py-3 text-sm font-medium transition-colors duration-200 flex items-center ${
                         activeTab === 'preview'
-                        ? 'bg-white border-b-2 border-black text-black'
-                        : 'text-gray-600 hover:text-gray-800'
+                      ? 'border-b-2 border-[#8b6c3f] bg-white text-[#2a241c]'
+                      : 'text-neutral-600 hover:text-neutral-800'
                     }`}
                     >
                     <Eye className="w-4 h-4 mr-2" />
@@ -260,7 +267,7 @@ export default function JobDetailsPage() {
                     </button>
                 </div>
 
-                <div className="min-h-96">
+                <div className="min-h-96 bg-white">
                     {activeTab === 'edit' ? (
                     <div className="p-4">
                         <textarea
@@ -292,9 +299,9 @@ export default function JobDetailsPage() {
                                     - Health insurance
                                     - Flexible hours
                                     - Remote work"
-                        className="w-full h-80 px-4 py-3 border-none resize-none focus:outline-none text-gray-700 leading-relaxed"
+                        className="h-80 w-full resize-none rounded-lg border border-[#ede5d9] bg-[#fffdfa] px-4 py-3 leading-relaxed text-gray-700 focus:border-[#8b6c3f] focus:outline-none focus:ring-2 focus:ring-[#dcc5a0]"
                         />
-                        <div className="mt-4 text-xs text-gray-500 border-t border-gray-200 pt-4">
+                        <div className="mt-4 border-t border-gray-200 pt-4 text-xs text-gray-500">
                         <p className="mb-2"><strong>Formatting Tips:</strong></p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
@@ -311,7 +318,7 @@ export default function JobDetailsPage() {
                         </div>
                     </div>
                     ) : (
-                    <div className="p-6 prose prose-blue max-w-none">
+                    <div className="prose max-w-none p-6 prose-headings:text-[#2a241c] prose-a:text-[#2f5a8b]">
                         {renderMakrdown(formData.aboutJob)}
                     </div>
                     )}
@@ -319,10 +326,10 @@ export default function JobDetailsPage() {
                 </div>
             </div>
 
-            <div className="px-8 py-6 bg-white border-t border-gray-200 flex flex-col sm:flex-row gap-4 justify-end">
+            <div className="flex flex-col justify-end gap-4 border-t border-[#eee5d9] bg-[#fcfaf7] px-8 py-6 sm:flex-row sm:px-10">
                 <button
                   onClick={handleSubmit}
-                  className="px-8 py-3 bg-black text-white rounded-xl hover:bg-gray-200 hover:text-black transition-colors duration-200 flex items-center justify-center">
+                  className="flex items-center justify-center rounded-xl bg-[#1f2321] px-8 py-3 font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#2b312e]">
                   <Save className="w-4 h-4 mr-2" />
                   Publish Job
                 </button>

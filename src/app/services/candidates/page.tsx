@@ -136,9 +136,9 @@ export default function CandidatePage() {
         <Navbar />
       </div>
 
-      <main className="pt-24">
+      <main className="pt-14">
         <section className="px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-5xl">
+          <div className="mx-auto max-w-6xl">
             <div className="space-y-6">
               <span className="inline-flex items-center rounded-full border border-neutral-200 px-4 py-1 text-sm font-medium text-neutral-600">
                 For Candidates

@@ -16,15 +16,16 @@ const RoundTabs: React.FC<RoundTabsProps> = ({
   onTabChange 
 }) => {
   return (
-    <div className="flex items-center justify-between mb-8 overflow-x-hidden">
-      {tabs.map((tab, index) => (
-        <React.Fragment key={tab}>
+    <div className="mb-8 overflow-x-auto">
+      <div className="flex min-w-max flex-wrap gap-3 rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-3">
+        {tabs.map((tab) => (
           <button
+            key={tab}
             onClick={() => onTabChange(tab)}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 cursor-pointer ${
+            className={`rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-300 cursor-pointer ${
               activeTab === tab
-                ? 'bg-black text-white shadow-2xl border-2 border-black'
-                : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-black hover:shadow-lg'
+                ? 'border border-black bg-black text-white shadow-sm'
+                : 'border border-transparent bg-white text-gray-700 hover:border-neutral-300 hover:text-black'
             }`}
           >
             {tab.startsWith('Round ') ? (
@@ -38,11 +39,8 @@ const RoundTabs: React.FC<RoundTabsProps> = ({
               tab
             )}
           </button>
-          {index < tabs.length - 1 && (
-            <div className="flex-1 h-px bg-black mx-4 min-w-[20px]"></div>
-          )}
-        </React.Fragment>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };

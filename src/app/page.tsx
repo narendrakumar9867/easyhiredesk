@@ -1,8 +1,17 @@
 "use client";
+
 import React, { useEffect } from "react";
 import Balancer from "react-wrap-balancer";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  ArrowRight,
+  BadgeCheck,
+  BriefcaseBusiness,
+  CalendarClock,
+  CheckCircle2,
+  ClipboardList,
+} from "lucide-react";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -11,162 +20,272 @@ import { useAuth } from "@/src/hooks/useAuth";
 import hremoImageDesktop from "../../public/images/image-hero-desktop.png";
 import hremoImageMobile from "../../public/images/image-hero-mobile.png";
 
+const workflowSteps = [
+  {
+    number: "01",
+    title: "Create the job",
+    description:
+      "Hiring managers publish a role with all essential company and position details in one place.",
+    icon: BriefcaseBusiness,
+  },
+  {
+    number: "02",
+    title: "Define the rounds",
+    description:
+      "Build the interview or assessment process with clearer round-by-round structure.",
+    icon: ClipboardList,
+  },
+  {
+    number: "03",
+    title: "Track progression",
+    description:
+      "Move candidates through stages with better visibility into decisions and status changes.",
+    icon: CheckCircle2,
+  },
+  {
+    number: "04",
+    title: "Stay coordinated",
+    description:
+      "Keep communication, timing, and follow-up aligned through a single recruitment experience.",
+    icon: CalendarClock,
+  },
+];
+
+function getHeroContent(role?: string) {
+  if (role === "hire_manager") {
+    return {
+      eyebrow: "Welcome back, hire manager",
+      title: "Move from open role to final selection with a clearer hiring system.",
+      description:
+        "EasyhireDesk helps you publish jobs, define rounds, review applicants, and keep hiring activity organized from one place.",
+      actions: (
+        <>
+          <Link
+            href="/hireprocess"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
+          >
+            Start hiring workflow
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            href="/joblists"
+            className="inline-flex items-center justify-center rounded-2xl border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-800 transition hover:border-neutral-900 hover:text-black"
+          >
+            View job lists
+          </Link>
+        </>
+      ),
+    };
+  }
+
+  if (role === "candidate") {
+    return {
+      eyebrow: "Welcome back, candidate",
+      title: "Discover roles, apply faster, and track every step with more confidence.",
+      description:
+        "Use EasyhireDesk to explore job openings, submit applications, and stay informed as you move through rounds.",
+      actions: (
+        <>
+          <Link
+            href="/joblists"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
+          >
+            Browse jobs
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            href="/profile"
+            className="inline-flex items-center justify-center rounded-2xl border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-800 transition hover:border-neutral-900 hover:text-black"
+          >
+            Update profile
+          </Link>
+        </>
+      ),
+    };
+  }
+
+  return {
+    eyebrow: "Recruitment, made clearer",
+    title: "Hire the right talent faster with a workflow that stays organized end to end.",
+    description:
+      "EasyhireDesk connects job posting, candidate applications, round management, and communication into one more practical hiring experience.",
+    actions: (
+      <>
+        <Link
+          href="/services/hire-manager"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
+        >
+          Explore hire manager flow
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+        <Link
+          href="/services/candidates"
+          className="inline-flex items-center justify-center rounded-2xl border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-800 transition hover:border-neutral-900 hover:text-black"
+        >
+          Explore candidate flow
+        </Link>
+      </>
+    ),
+  };
+}
+
 export default function Home() {
   const { authUser, checkAuth, isCheckingAuth, initializeAuth } = useAuth();
   const role = authUser?.role;
+  const heroContent = getHeroContent(role);
 
   useEffect(() => {
     initializeAuth();
 
     const token = localStorage.getItem("token");
-    if(token && !authUser) {
+    if (token && !authUser) {
       checkAuth();
     }
-  }, []);
+  }, [authUser, checkAuth, initializeAuth]);
 
-  useEffect(() => {
-    const testConnection = async () => {
-      try {
-        const response = await fetch("http://localhost:5000/", {
-          method: "GET",
-        });
-        
-        if(response.ok) {
-          console.log("Server connection successfully.");
-        }
-      } catch (error) {
-        console.log("server connection failed.", error);
-      }
-    }
-    testConnection();
-  }, []);
-
-  useEffect(() => {
-    console.log("authUser:", authUser);
-    console.log("role:", role);
-    console.log("isCheckingAuth:", isCheckingAuth);
-  }, [authUser, role, isCheckingAuth]);
-
-  if(isCheckingAuth) {
-    return(
-      <div className="min-h-screen flex items-center justify-center">
+  if (isCheckingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-lg">Loading...</div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen w-full bg-white">
-
-      <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+    <div className="min-h-screen w-full bg-white text-neutral-900">
+      <div className="fixed top-0 left-0 z-50 w-full bg-white shadow-md">
         <Navbar />
       </div>
-        {/* Visitor Page */}
-        <div className="pt-20">
-          {!role && (
-          <Hero
-            button={null}
-            text="Get your team in sync, no matter your location. Streamline processes, create team rituals, and watch productivity soar."
-          />
-        )}
 
-        {/* Hire Manager Page */}
-        {role === "hire_manager" && (
-          <Hero
-            button={
-              <div className="flex gap-4">
-                <Link 
-                  href="/hireprocess" 
-                  className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90 mr-3"
-                >  
-                  Hire Next Candidates 
-                </Link>
-                <Link 
-                  href="/joblists"
-                  className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90"
-                >
-                  See Our Job Lists 
-                </Link>
-              </div>
-            }
-            text="As a hiring manager, streamline hiring and manage your candidates."
-          />
-        )}
+      <main className="pt-14">
+        <Hero content={heroContent} />
 
-        {/* Candidate Page */}
-        {role === "candidate" && (
-          <Hero
-            button={
-              <div className="flex gap-4">
-                  <Link href="/joblists">
-                    <button className="border-balck w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90">
-                      See Our Job Lists
-                    </button>
-                  </Link>
-                  <Link href="/profile">
-                    <button className="border-black w-fit rounded-xl border-2 bg-black px-4 py-2 text-white transition-all hover:bg-transparent hover:text-black/90">
-                      Update Profile
-                    </button>
-                  </Link>
+        <section className="px-4 py-1">
+          <div className="mx-auto max-w-6xl">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                  Platform workflow
+                </p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+                  One connected process from job setup to final decision.
+                </h2>
               </div>
-            
-            }
-            text="As a candidate, explore jobs tailored for you and apply instantly."
-          />
-        )}
+              <p className="max-w-xl text-sm leading-6 text-neutral-600">
+                The platform is organized around practical recruitment actions: create roles, define rounds, manage progression, and keep communication aligned.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-5 lg:grid-cols-4">
+              {workflowSteps.map((step) => {
+                const Icon = step.icon;
+
+                return (
+                  <article
+                    key={step.number}
+                    className="rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex rounded-2xl bg-black p-3 text-white">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <span className="text-sm font-semibold text-neutral-400">{step.number}</span>
+                    </div>
+                    <h3 className="mt-6 text-xl font-semibold">{step.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-neutral-600">{step.description}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
 
         <Footer />
-      </div> 
+      </main>
     </div>
   );
 }
 
 function Hero({
-  button,
-  text,
+  content,
 }: {
-  button: React.ReactNode | null;
-  text: string;
+  content: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    actions: React.ReactNode;
+  };
 }) {
   return (
-    <section className="mx-auto flex max-w-6xl flex-col-reverse gap-24 px-4 pb-12 transition-all md:flex-row md:gap-4">
-      <div className="flex flex-col items-center gap-6 pt-8 text-center md:w-1/2 md:items-start md:gap-10 md:pt-32 md:text-left">
-        <h1 className="text-4xl font-semibold md:text-6xl">
-          <Balancer>Hire the best talent in tech, fast.</Balancer>
-        </h1>
+    <section className="px-4 pb-16 pt-6 sm:px-6 lg:px-8">
+      <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+        <div className="space-y-6">
+          <span className="inline-flex items-center rounded-full border border-neutral-200 px-4 py-1 text-sm font-medium text-neutral-600">
+            {content.eyebrow}
+          </span>
 
-        <p className="text-neutral-400 md:max-w-[400px]">
-          <Balancer>{text}</Balancer>
-        </p>
+          <div className="space-y-4">
+            <h1 className="max-w-3xl text-4xl font-serif tracking-tight sm:text-5xl lg:text-6xl">
+              <Balancer>{content.title}</Balancer>
+            </h1>
 
-        {button}
+            <p className="max-w-2xl text-base leading-7 text-neutral-600 sm:text-lg">
+              <Balancer>{content.description}</Balancer>
+            </p>
+          </div>
 
-        <div className="flex flex-col text-center items-center gap-2 md:gap-3">
-          <h4 className="text-gray-700 text-sm md:text-base font-medium">
-            <span className="font-semibold text-gray-900">Sponsors:</span> Sunrise Innovations, SilverOak Solutions, Northgate Ventures, etc.
-          </h4>
-          <p className="text-xs md:text-sm text-gray-500 max-w-2xl">
-            Sponsor names shown in this project are fictional and used for demonstration purposes only. They do not represent real organizations or endorsements.
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row">{content.actions}</div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-5">
+              <div className="text-3xl font-semibold text-black">2</div>
+              <p className="mt-2 text-sm text-neutral-600">core user groups</p>
+            </div>
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-5">
+              <div className="text-3xl font-semibold text-black">4</div>
+              <p className="mt-2 text-sm text-neutral-600">workflow stages highlighted</p>
+            </div>
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-5">
+              <div className="text-3xl font-semibold text-black">1</div>
+              <p className="mt-2 text-sm text-neutral-600">connected hiring platform</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative overflow-hidden rounded-[2rem] border border-neutral-200 bg-neutral-950 p-3 shadow-xl">
+          <div className="relative overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.14),_transparent_42%),linear-gradient(180deg,_#1a1a1a_0%,_#090909_100%)] px-8 py-4">
+            <div className="hidden md:block">
+              <Image
+                src={hremoImageDesktop}
+                alt="EasyhireDesk hero"
+                className="mx-auto h-auto max-w-[440px]"
+                priority
+              />
+            </div>
+            <div className="md:hidden">
+              <Image
+                src={hremoImageMobile}
+                alt="EasyhireDesk hero"
+                className="mx-auto h-auto max-w-[320px]"
+                priority
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+          </div>
+
+          <div className="absolute bottom-8 left-8 right-8 rounded-[1.5rem] border border-white/15 bg-white/10 p-6 text-white backdrop-blur-sm">
+            <div className="flex items-start gap-3">
+              <BadgeCheck className="mt-1 h-5 w-5 flex-none" />
+              <div>
+                <h2 className="text-lg font-semibold">Designed for practical recruitment</h2>
+                <p className="mt-2 text-sm leading-6 text-white/80">
+                  EasyhireDesk brings structure to recruitment so managers and candidates can move through the process with better visibility and less friction.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      <section className="md:w-1/2">
-        <div className="hidden md:block px-28 py-20">
-          <Image
-            src={hremoImageDesktop}
-            alt="hero-image"
-            className="h-auto max-w-[400px]"
-          />
-        </div>
-        <div className="md:hidden">
-          <Image
-            src={hremoImageMobile}
-            alt="hero-image"
-            className="h-auto max-w-[350px] max-h-[350px] mx-auto pt-16"
-          />
-        </div>
-      </section>
     </section>
   );
 }

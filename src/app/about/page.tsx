@@ -106,7 +106,7 @@ export default function About() {
         <Navbar />
       </div>
 
-      <main className="pt-24">
+      <main className="pt-14">
         <section className="px-4 pb-16 pt-6 sm:px-6 lg:px-8">
           <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
             <div className="space-y-6">
@@ -115,7 +115,7 @@ export default function About() {
               </span>
 
               <div className="space-y-4">
-                <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
+                <h1 className="max-w-3xl text-4xl font-serif tracking-tight sm:text-5xl lg:text-6xl">
                   Making recruitment more organized from the first job post to the final round.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-neutral-600 sm:text-lg">

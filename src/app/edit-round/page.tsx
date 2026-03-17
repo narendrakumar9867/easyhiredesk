@@ -90,7 +90,8 @@ const EditRoundPage = () => {
         const token = tokenFromUrl || localStorage.getItem('token');
         if (!token) {
           alert('Authentication required');
-          router.push('/login');
+          console.log("error for edit page", token)
+          router.push('/auth/login');
           return;
         }
 
@@ -136,7 +137,7 @@ const EditRoundPage = () => {
       const token = tokenFromUrl || localStorage.getItem('token');
       if (!token) {
         alert('Authentication required');
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 

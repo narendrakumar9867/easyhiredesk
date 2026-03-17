@@ -137,9 +137,9 @@ export default function HireManagerPage() {
         <Navbar />
       </div>
 
-      <main className="pt-24">
+      <main className="pt-14">
         <section className="px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-5xl">
+          <div className="mx-auto max-w-6xl">
             <div className="space-y-6">
               <span className="inline-flex items-center rounded-full border border-neutral-200 px-4 py-1 text-sm font-medium text-neutral-600">
                 For Hire Managers
@@ -155,19 +155,30 @@ export default function HireManagerPage() {
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/hireprocess"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
-                >
-                  Start hiring workflow
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  href="/joblists"
-                  className="inline-flex items-center justify-center rounded-2xl border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-800 transition hover:border-neutral-900 hover:text-black"
-                >
-                  View job lists
-                </Link>
+                {!isCheckingAuth && isHireManager ? (
+                  <>
+                    <Link
+                      href="/hireprocess"
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                    >
+                      Start hiring workflow
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                    <Link
+                      href="/joblists"
+                      className="inline-flex items-center justify-center rounded-2xl border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-800 transition hover:border-neutral-900 hover:text-black"
+                    >
+                      View job lists
+                    </Link>
+                  </>
+                ) : (
+                  <Link
+                    href="/auth/signup"
+                    className="inline-flex items-center justify-center rounded-2xl border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-800 transition hover:border-neutral-900 hover:text-black"
+                  >
+                    Create hire manager account
+                  </Link>
+                )}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">

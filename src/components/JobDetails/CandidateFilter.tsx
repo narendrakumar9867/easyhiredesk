@@ -11,52 +11,30 @@ const CandidateFilter: React.FC<CandidateFilterProps> = ({
   candidateFilter, 
   onFilterChange 
 }) => {
+  const options: CandidateFilterProps["candidateFilter"][] = ["all", "selected", "pending", "rejected"];
+
   return (
-    <div className="w-64 flex-shrink-0 bg-gray-100 rounded-lg shadow-md p-4 sticky top-4 self-start">
-      <h2 className="text-lg font-semibold mb-4 text-black text-center border-b rounded-lg">
+    <div className="w-full rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4 lg:sticky lg:top-28 lg:w-72 lg:self-start">
+      <h2 className="mb-2 text-lg font-semibold text-black">
         Filter Candidates
       </h2>
-      <div className="space-y-2">
-        <button
-          onClick={() => onFilterChange("all")}
-          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-            candidateFilter === "all"
-              ? "bg-white text-gray-800 border-l-4 border-blue-600"
-              : "text-black hover:bg-gray-200"
-          }`}
-        >
-          All Candidates
-        </button>
-        <button
-          onClick={() => onFilterChange("selected")}
-          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-            candidateFilter === "selected"
-              ? "bg-white text-gray-800 border-l-4 border-blue-600"
-              : "text-black hover:bg-gray-200"
-          }`}
-        >
-          Selected
-        </button>
-        <button
-          onClick={() => onFilterChange("pending")}
-          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-            candidateFilter === "pending"
-              ? "bg-white text-gray-800 border-l-4 border-blue-600"
-              : "text-black hover:bg-gray-200"
-          }`}
-        >
-          Pending
-        </button>
-        <button
-          onClick={() => onFilterChange("rejected")}
-          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-            candidateFilter === "rejected"
-              ? "bg-white text-gray-800 border-l-4 border-blue-600"
-              : "text-black hover:bg-gray-200"
-          }`}
-        >
-          Rejected
-        </button>
+      <p className="mb-4 text-sm leading-6 text-neutral-600">
+        Narrow the candidate list by current round decision status.
+      </p>
+      <div className="flex flex-wrap gap-2 lg:flex-col">
+        {options.map((option) => (
+          <button
+            key={option}
+            onClick={() => onFilterChange(option)}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors cursor-pointer lg:w-full lg:rounded-xl lg:text-left ${
+              candidateFilter === option
+                ? "bg-black text-white"
+                : "border border-neutral-300 bg-white text-neutral-700 hover:border-neutral-900 hover:text-black"
+            }`}
+          >
+            {option === "all" ? "All candidates" : option.charAt(0).toUpperCase() + option.slice(1)}
+          </button>
+        ))}
       </div>
     </div>
   );

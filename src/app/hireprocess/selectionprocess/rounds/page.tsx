@@ -363,12 +363,17 @@ const RoundPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#f8f6f2] text-neutral-900">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-14 top-24 h-64 w-64 rounded-full bg-[#d9eadf] blur-3xl" />
+        <div className="absolute right-0 top-0 h-80 w-80 rounded-full bg-[#f0e3ce] blur-3xl" />
+      </div>
+
       <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
         <Navbar />
       </div>
 
-      <div className="pt-28">
+      <div className="relative z-10 pt-18">
         <RoundTabs
           totalRounds={totalRounds}
           currentRound={currentRound}
@@ -377,27 +382,31 @@ const RoundPage = () => {
         />
       </div>
 
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-10 sm:px-6 lg:px-8">
+        <div className="mb-6 rounded-[1.5rem] border border-[#e7dfd3] bg-white/90 p-6 shadow-[0_20px_60px_-40px_rgba(0,0,0,0.45)] backdrop-blur sm:p-8">
+          <div className="inline-flex items-center rounded-full border border-[#d8ccb7] bg-[#f8f1e3] px-4 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6548]">
+            Round Builder
+          </div>
+          <h1 className="mt-4 text-3xl font-serif tracking-tight text-[#1d1b18] sm:text-4xl">
             Round {currentRound}{roundTitles[currentRound] ? ` - ${roundTitles[currentRound]}` : ''}
           </h1>
-          <p className="text-gray-600 mt-2">
-            {currentRound === 1 
+          <p className="mt-3 text-sm leading-6 text-neutral-600 sm:text-base">
+            {currentRound === 1
               ? `Configure candidate application form fields and email for Round ${currentRound} of ${totalRounds}`
-              : `Configure email templates for Round ${currentRound} of ${totalRounds}`
-            }
+              : `Configure email templates for Round ${currentRound} of ${totalRounds}`}
           </p>
         </div>
 
-        {renderRoundContent()}
+        <div className="rounded-[1.5rem] border border-[#e8e0d4] bg-white p-4 shadow-[0_28px_60px_-44px_rgba(0,0,0,0.5)] sm:p-6">
+          {renderRoundContent()}
+        </div>
 
-        <div className="bg-white pb-6 mb-6 mt-6 px-6">
-          <div className="flex gap-3 justify-end">
+        <div className="mb-6 mt-6 rounded-2xl border border-[#e8e0d4] bg-[#fcfaf7] px-4 py-4 sm:px-6">
+          <div className="flex flex-wrap justify-end gap-3">
             {currentRound === 1 && (
               <button
                 onClick={() => setShowPreview(!showPreview)}
-                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-200 hover:text-black transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#1f2321] px-4 py-2 text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#2b312e]"
               >
                 <Eye size={20} />
                 {showPreview ? 'Edit Mode' : 'Preview'}
@@ -407,7 +416,7 @@ const RoundPage = () => {
             {currentRound > 1 && (
               <button
                 onClick={() => handleRoundChange(currentRound - 1)}
-                className="px-4 py-2 bg-gray-200 text-black hover:bg-black hover:text-white rounded-lg"
+                className="rounded-xl border border-[#d9d1c4] bg-white px-4 py-2 text-neutral-800 transition-colors hover:border-[#c4b59d] hover:bg-[#f4efe7]"
               >
                 Previous Round
               </button>
@@ -416,7 +425,7 @@ const RoundPage = () => {
             {currentRound < totalRounds && (
               <button
                 onClick={() => handleRoundChange(currentRound + 1)}
-                className="px-4 py-2 bg-gray-200 text-black hover:bg-black hover:text-white rounded-lg"
+                className="rounded-xl bg-[#1f2321] px-4 py-2 text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#2b312e]"
               >
                 Save & Next
               </button>
@@ -425,7 +434,7 @@ const RoundPage = () => {
             {currentRound === totalRounds && (
               <button
                 onClick={handleSubmit}
-                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-200 hover:text-black transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#1f2321] px-4 py-2 text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#2b312e]"
               >
                 <Save size={20} />
                 Submit All Rounds
