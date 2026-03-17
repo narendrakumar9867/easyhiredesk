@@ -13,11 +13,11 @@ import {
   JobHeader,
   CompanyInfo,
   JobDescription,
-  ApplicationLink,
   CandidateCard,
   CandidateFilter,
   RoundTabs,
-  QuickActions
+  QuickActions,
+  ApplicationLink
 } from '@/src/components/JobDetails';
 import { FileText, Loader2, Lock, LockIcon, LockOpen, ShieldCheck, Trash2 } from 'lucide-react';
 
@@ -120,10 +120,6 @@ const JobDetailsHireManager: React.FC = () => {
                 aboutJob={jobState?.aboutJob || ""}
                 jobId={jobId}
               />
-            </section>
-
-            <section className="rounded-2xl bg-white px-5 sm:px-7">
-              <ApplicationLink jobId={jobId} />
             </section>
 
             <section className="border-l-2 border-neutral-300 pl-4 sm:pl-6">
@@ -340,15 +336,8 @@ const JobDetailsHireManager: React.FC = () => {
                       <p className="text-sm text-gray-500 mb-4">
                         Share the application link to start receiving applications.
                       </p>
-                      <button
-                        onClick={() => {
-                          const shareLink = `${window.location.origin}/apply/${jobId}`;
-                          navigator.clipboard.writeText(shareLink);
-                          alert('Application link copied to clipboard!');
-                        }}
-                        className="rounded-lg bg-black px-4 py-2 text-white transition-colors hover:bg-neutral-800"
-                      >
-                        Copy Application Link
+                      <button>
+                        {jobId && <ApplicationLink jobId={jobId} />}
                       </button>
                     </>
                   ) : (
@@ -419,7 +408,7 @@ const JobDetailsHireManager: React.FC = () => {
         <Navbar />
       </div>
 
-      <JobHeader jobTitle={jobState.jobTitle} />
+      <JobHeader jobTitle={jobState.jobTitle} jobId={jobId} />
 
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 pb-10 sm:px-6 lg:px-8">
 

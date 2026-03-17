@@ -94,7 +94,7 @@ export default function Navbar() {
                 
                 <section ref={animationParent} className="flex items-center">
                     {isSideMenuOpen && <MobileSideMenu closeSideMenu={closeSideMenu} />}
-                    <div className="hidden items-center gap-1 rounded-2xl border border-[#e7dfd3] bg-[#fcfaf7] px-2 py-1 md:flex">
+                    <div className="hidden items-center gap-3 rounded-2xl border border-[#e7dfd3] bg-[#fcfaf7] px-2 md:flex">
                         {navItems.map((item, index) => (
                             <Link
                                 key={index}
