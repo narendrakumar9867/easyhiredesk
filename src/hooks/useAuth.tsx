@@ -46,7 +46,6 @@ interface AuthStore {
     isCheckingAuth: boolean;
     token: string | null;
     checkAuth: () => Promise<void>;
-    checkSupabaseAuth: () => Promise<void>; 
     signup: (data: SignUpData) => Promise<void>;
     signupWithGoogle: (role: string) => Promise<void>;
     loginWithGoogle: (role: string) => Promise<void>;
@@ -93,48 +92,12 @@ export const useAuth = create<AuthStore>()(
                 }
             },
 
-            checkSupabaseAuth: async () => {
-                if (typeof window === 'undefined') return;
-                
-                try {
-                    const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
-                    const supabase = createClientComponentClient();
-                    
-                    const { data: { session } } = await supabase.auth.getSession();
-                    
-                    if (session?.user) {
-                        // Convert Supabase user to your user format
-                        const user = {
-                            _id: session.user.id,
-                            email: session.user.email!,
-                            role: 'candidate',
-                        };
-                        
-                        set({ 
-                            authUser: user,
-                            token: session.access_token,
-                            isCheckingAuth: false 
-                        });
-                        
-                        localStorage.setItem("token", session.access_token);
-                        localStorage.setItem("authUser", JSON.stringify(user));
-                    } else {
-                        // No session found
-                        set({ isCheckingAuth: false });
-                    }
-                } catch (error) {
-                    console.error("Error checking Supabase auth:", error);
-                    set({ isCheckingAuth: false });
-                }
-            },
-
             checkAuth: async () => {
                 set({ isCheckingAuth: true });
                 try {
-                    // First check for existing token from your backend
+                    // Check existing backend JWT only.
                     const token = get().token || localStorage.getItem("token");
                     if (token) {
-                        // Try to verify with your backend first
                         try {
                             const res = await axiosInstance.get<AuthResponse>("/auth/check", {
                                 headers: {
@@ -150,27 +113,21 @@ export const useAuth = create<AuthStore>()(
                             });
                             return;
                         } catch (backendError: any) {
-                            // Only log if it's not a 404 (route doesn't exist)
                             if (backendError.response?.status !== 404) {
-                                console.log("Backend auth failed, checking Supabase...");
+                                console.log("Backend auth failed.");
                             }
-                            // Clear invalid backend token
+                            // Clear invalid/stale backend auth artifacts.
                             localStorage.removeItem("token");
                             localStorage.removeItem("authUser");
+                            set({ authUser: null, token: null });
                         }
                     }
-                    
-                    // Check Supabase auth
-                    await get().checkSupabaseAuth();
-                    
-                    // If no auth found anywhere, set as not authenticated
-                    if (!get().authUser) {
-                        set({ 
-                            authUser: null, 
-                            token: null, 
-                            isCheckingAuth: false 
-                        });
-                    }
+
+                    set({ 
+                        authUser: null, 
+                        token: null, 
+                        isCheckingAuth: false 
+                    });
                 } catch (error: any) {
                     console.error("Error checking auth:", error);
                     localStorage.removeItem("token");
