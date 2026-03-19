@@ -1,13 +1,13 @@
 "use client";
 import React, { useState } from 'react';
 import { Eye, Edit, Building2, MapPin, Globe, Linkedin, Twitter, Plus, X, Save } from 'lucide-react';
-import axios from "axios";
 
 import Navbar from "@/src/components/Navbar";
 import FooterLogin from '@/src/components/FooterLogin';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/hooks/useAuth';
 import renderMakrdown from '@/src/components/MarkdownRenderer';
+import { axiosInstance } from '@/src/utils/axios';
 
 interface SocialLink {
   id: number;
@@ -17,7 +17,7 @@ interface SocialLink {
 
 export default function JobDetailsPage() {
   const [activeTab, setActiveTab] = useState('edit');
-  const { token } = useAuth();
+  const { authUser } = useAuth();
 
   const [formData, setFormData] = useState({
     companyName: '',
@@ -33,13 +33,13 @@ export default function JobDetailsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if(!token) {
+    if(!authUser) {
       alert("You must be logged in to submit a job.");
       return;
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/jobs", formData, {
+      const res = await axiosInstance.post("/jobs", formData, {
         withCredentials: true,
         headers: {
           "Content-Type": "application/json",

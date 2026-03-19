@@ -18,13 +18,13 @@ const QuickActions: React.FC<QuickActionsProps> = ({
   onEditRound 
 }) => {
   const handleEdit = () => {
-    // Open edit page in new tab with proper parameters
     if (jobId) {
-      const token = localStorage.getItem('token');
-      window.open(
-        `/edit-round?jobId=${jobId}&roundNumber=${currentRound}&${token}`,
-        '_blank'
-      );
+      const params = new URLSearchParams({
+        jobId,
+        roundNumber: String(currentRound),
+      });
+
+      window.open(`/edit-round?${params.toString()}`, '_blank');
     } else {
       alert('Job ID not found');
     }

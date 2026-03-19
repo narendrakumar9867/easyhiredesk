@@ -124,8 +124,7 @@ export default function CandidatePage() {
   useEffect(() => {
     initializeAuth();
 
-    const token = localStorage.getItem("token");
-    if (token && !authUser) {
+    if (!authUser) {
       checkAuth();
     }
   }, [authUser, checkAuth, initializeAuth]);

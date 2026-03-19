@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Job } from '@/src/types/Job';
+import { axiosInstance } from '@/src/utils/axios';
 
 interface UseJobStatusProps {
   job: Job | null;
@@ -34,6 +34,7 @@ export const useJobStatus = ({
   const [jobCloseTime, setJobCloseTime] = useState<string>("");
   const [isJobClosed, setIsJobClosed] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
 
   // Set initial job closed status
   useEffect(() => {
@@ -73,13 +74,13 @@ export const useJobStatus = ({
         return;
       }
 
-      const response = await axios.put(
-        `http://localhost:5000/api/jobs/${jobId}/close`,
+      const response = await axiosInstance.put(
+        `/jobs/${jobId}/close`,
         {
           closeDate: closeDateTime.toISOString(),
           isClosed: false
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: authHeaders }
       );
 
       if (response.data.success) {
@@ -100,13 +101,13 @@ export const useJobStatus = ({
   const handleImmediateClose = async () => {
     console.log("Token in handleImmediateClose:", token);
     try {
-      const response = await axios.put(
-        `http://localhost:5000/api/jobs/${jobId}/close`,
+      const response = await axiosInstance.put(
+        `/jobs/${jobId}/close`,
         {
           isClosed: true,
           closeDate: new Date().toISOString()
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: authHeaders }
       );
 
       if (response.data.success) {
@@ -127,10 +128,10 @@ export const useJobStatus = ({
   // Reopen job
   const handleReopenJob = async () => {
     try {
-      const response = await axios.put(
-        `http://localhost:5000/api/jobs/${jobId}/reopen`,
+      const response = await axiosInstance.put(
+        `/jobs/${jobId}/reopen`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: authHeaders }
       );
 
       if (response.data.success) {
@@ -179,9 +180,9 @@ export const useJobStatus = ({
 
     try {
       setIsDeleting(true);
-      const response = await axios.delete(
-        `http://localhost:5000/api/jobs/${jobId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await axiosInstance.delete(
+        `/jobs/${jobId}`,
+        { headers: authHeaders }
       );
 
       if (response.data.success) {

@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/src/hooks/useAuth";
 
@@ -13,16 +13,25 @@ interface SignUpPageProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginClick?: () => void; // Add this prop for navigation to login
+  forcedRole?: "candidate" | "hire_manager";
 }
 
-export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPageProps) {
+export default function SignUpPage({ isOpen, onClose, onLoginClick, forcedRole }: SignUpPageProps) {
   if(!isOpen) return null;
 
+  const resolvedRole = forcedRole || "candidate";
+
   const [formData, setFormData] = useState<FormData>({
-    role: "candidate", // Default to candidate for job application
+    role: resolvedRole,
     email: "",
     password: "",
   });
+
+  useEffect(() => {
+    if (forcedRole) {
+      setFormData((prev) => ({ ...prev, role: forcedRole }));
+    }
+  }, [forcedRole]);
 
   const { signup, signupWithGoogle, isSigningUp, isGoogleSigningIn } = useAuth();
 
@@ -93,21 +102,21 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
     if (!validateForm()) return;
     
     try {
-      await signup(formData);
+      await signup({ ...formData, role: resolvedRole });
       onClose();
     } catch (error) {
       console.error("Signup failed:", error);
     }
-  }, [formData, validateForm, signup, onClose]);
+  }, [formData, validateForm, signup, onClose, resolvedRole]);
 
   const handleGoogleSignup = useCallback(async () => {
     try {
-      await signupWithGoogle(formData.role);
+      await signupWithGoogle(resolvedRole);
       onClose();
     } catch (error) {
       console.error("Google signup failed:", error);
     }
-  }, [formData.role, signupWithGoogle, onClose]);
+  }, [signupWithGoogle, onClose, resolvedRole]);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
@@ -126,18 +135,20 @@ export default function SignUpPage({ isOpen, onClose, onLoginClick }: SignUpPage
         </p>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
-          <select 
-            id="role"
-            name="role"
-            value={formData.role}
-            onChange={handleInputChange}
-            disabled={isSigningUp}
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none"
-          >
-            <option value="candidate">Candidate</option>
-            <option value="hire_manager">Hire Manager</option>
-          </select> 
+          {!forcedRole && (
+            <select 
+              id="role"
+              name="role"
+              value={formData.role}
+              onChange={handleInputChange}
+              disabled={isSigningUp}
+              required
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none"
+            >
+              <option value="candidate">Candidate</option>
+              <option value="hire_manager">Hire Manager</option>
+            </select>
+          )}
           <input
             type="email"
             name="email"

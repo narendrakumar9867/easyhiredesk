@@ -1,10 +1,10 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import axios from 'axios';
 import { Save, Mail, ArrowLeft } from 'lucide-react';
 import Navbar from "@/src/components/Navbar";
 import FooterLogin from '@/src/components/FooterLogin';
+import { axiosInstance } from '@/src/utils/axios';
 
 const EditRoundPage = () => {
   const searchParams = useSearchParams();
@@ -12,7 +12,20 @@ const EditRoundPage = () => {
   
   const jobId = searchParams.get('jobId');
   const roundNumber = parseInt(searchParams.get('roundNumber') || '1');
-  const tokenFromUrl = searchParams.get('token');
+
+  useEffect(() => {
+    const hasTokenInUrl = searchParams.get('token');
+    if (!hasTokenInUrl || !jobId) {
+      return;
+    }
+
+    const safeParams = new URLSearchParams({
+      jobId,
+      roundNumber: String(roundNumber),
+    });
+
+    router.replace(`/edit-round?${safeParams.toString()}`);
+  }, [jobId, roundNumber, router, searchParams]);
 
   const [isEditingFields, setIsEditingFields] = useState(false);
   const [newField, setNewField] = useState({
@@ -87,17 +100,9 @@ const EditRoundPage = () => {
       }
 
       try {
-        const token = tokenFromUrl || localStorage.getItem('token');
-        if (!token) {
-          alert('Authentication required');
-          console.log("error for edit page", token)
-          router.push('/auth/login');
-          return;
-        }
-
-        const response = await axios.get(
-          `http://localhost:5000/api/rounds/${jobId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+        const response = await axiosInstance.get(
+          `/rounds/${jobId}`,
+          {}
         );
         
         const data = response.data.data;
@@ -134,13 +139,6 @@ const EditRoundPage = () => {
     }
 
     try {
-      const token = tokenFromUrl || localStorage.getItem('token');
-      if (!token) {
-        alert('Authentication required');
-        router.push('/auth/login');
-        return;
-      }
-
       const payload = {
         jobId,
         roundNumber,
@@ -160,12 +158,11 @@ const EditRoundPage = () => {
 
       console.log('Updating round with payload:', payload);
 
-      await axios.put(
-        `http://localhost:5000/api/round/details/${jobId}/${roundNumber}`,
+      await axiosInstance.put(
+        `/round/details/${jobId}/${roundNumber}`,
         payload,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }
@@ -181,38 +178,46 @@ const EditRoundPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading round details...</p>
+      <div className="min-h-screen bg-[#f8f6f2] flex items-center justify-center px-4">
+        <div className="rounded-3xl border border-[#e7dfd3] bg-white/95 p-10 text-center shadow-[0_24px_70px_-45px_rgba(0,0,0,0.45)]">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-black mx-auto mb-4"></div>
+          <p className="text-neutral-600">Loading round details...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#f8f6f2] text-neutral-900">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-14 top-24 h-64 w-64 rounded-full bg-[#d9eadf] blur-3xl" />
+        <div className="absolute right-0 top-0 h-80 w-80 rounded-full bg-[#f0e3ce] blur-3xl" />
+      </div>
+
       <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
         <Navbar />
       </div>
 
-      <div className="pt-28 pb-12">
+      <div className="relative z-10 pt-28 pb-12">
         <div className="max-w-6xl mx-auto px-6">
           {/* Header */}
-          <div className="bg-white mb-6">
+          <div className="mb-6 rounded-[1.75rem] border border-[#e7dfd3] bg-white/90 p-7 shadow-[0_20px_60px_-40px_rgba(0,0,0,0.45)] backdrop-blur sm:p-9">
             <div className="flex items-center gap-4 mb-4">
               <button
                 onClick={() => window.close()}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="rounded-xl border border-[#e5dac9] bg-[#f8f1e3] p-2.5 text-[#6e5b3f] transition-colors hover:bg-[#efe4d1]"
                 title="Close"
               >
                 <ArrowLeft size={24} />
               </button>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <span className="inline-flex items-center rounded-full border border-[#d8ccb7] bg-[#f8f1e3] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6548]">
+                  Round Editor
+                </span>
+                <h1 className="mt-4 text-3xl font-serif tracking-tight text-[#1d1b18] sm:text-4xl">
                   Edit Round {roundNumber} - {roundTitle || 'Untitled Round'}
                 </h1>
-                <p className="text-gray-600 mt-2">
+                <p className="text-neutral-600 mt-2 leading-6">
                   Update round details and email templates (Round {roundNumber} of {totalRounds})
                 </p>
               </div>
@@ -220,24 +225,24 @@ const EditRoundPage = () => {
           </div>
 
           {/* Round Title */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-            <h3 className="text-lg font-semibold mb-4">Round Title</h3>
+          <div className="mb-6 rounded-[1.5rem] border border-[#e8e0d4] bg-white p-6 shadow-[0_22px_55px_-45px_rgba(0,0,0,0.5)]">
+            <h3 className="text-lg font-semibold text-[#1d1b18] mb-4">Round Title</h3>
             <input
               type="text"
               value={roundTitle}
               onChange={(e) => setRoundTitle(e.target.value)}
               placeholder={`Enter title for Round ${roundNumber}`}
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 text-lg"
+              className="w-full rounded-xl border border-[#d9d1c4] bg-[#fffdfa] px-4 py-3 text-lg transition-all duration-200 placeholder:text-neutral-400 focus:border-[#8b6c3f] focus:outline-none focus:ring-2 focus:ring-[#dcc5a0]"
             />
           </div>
 
           {roundNumber === 1 && (
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div className="mb-6 rounded-[1.5rem] border border-[#e8e0d4] bg-white p-6 shadow-[0_22px_55px_-45px_rgba(0,0,0,0.5)]">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Form Fields</h3>
+                <h3 className="text-lg font-semibold text-[#1d1b18]">Form Fields</h3>
                 <button
                   onClick={() => setIsEditingFields(!isEditingFields)}
-                  className="text-gray-800 hover:text-gray-400 text-sm font-medium cursor-pointer"
+                  className="rounded-full border border-[#d8ccb7] bg-[#f8f1e3] px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[#6e5b3f] transition-colors hover:bg-[#efe4d1] cursor-pointer"
                 >
                   {isEditingFields ? 'View Mode' : 'Edit Mode'}
                 </button>
@@ -248,17 +253,17 @@ const EditRoundPage = () => {
                 <>
                   <div className="space-y-4 mb-6">
                     {formFields.map((field, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div key={index} className="rounded-xl border border-[#e7dfd3] bg-[#fffdfa] p-4">
                         <div className="flex justify-between items-start mb-3">
                           <input
                             type="text"
                             value={field.label}
                             onChange={(e) => updateField(index, { label: e.target.value })}
-                            className="font-medium text-gray-900 border-b border-gray-300 focus:outline-none w-full"
+                            className="w-full border-b border-[#d9d1c4] bg-transparent font-medium text-[#1d1b18] focus:outline-none"
                           />
                           <button
                             onClick={() => removeField(index)}
-                            className="text-red-600 hover:text-red-800 ml-2"
+                            className="ml-2 text-red-600 hover:text-red-800"
                           >
                             ✕
                           </button>
@@ -268,7 +273,7 @@ const EditRoundPage = () => {
                           <select
                             value={field.fieldType}
                             onChange={(e) => updateField(index, { fieldType: e.target.value })}
-                            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                            className="rounded-lg border border-[#d9d1c4] bg-white px-3 py-2 text-sm focus:border-[#8b6c3f] focus:outline-none"
                           >
                             {fieldTypes.map(type => (
                               <option key={type.value} value={type.value}>{type.label}</option>
@@ -280,7 +285,7 @@ const EditRoundPage = () => {
                             value={field.placeholder}
                             onChange={(e) => updateField(index, { placeholder: e.target.value })}
                             placeholder="Placeholder text"
-                            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                            className="rounded-lg border border-[#d9d1c4] bg-white px-3 py-2 text-sm focus:border-[#8b6c3f] focus:outline-none"
                           />
                         </div>
                         
@@ -299,21 +304,21 @@ const EditRoundPage = () => {
 
                   {/* Add New Field */}
                   {isAddingField ? (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+                    <div className="rounded-xl border-2 border-dashed border-[#d9d1c4] bg-[#fbf7ef] p-4">
                       <div className="space-y-3">
                         <input
                           type="text"
                           value={newField.label}
                           onChange={(e) => setNewField({...newField, label: e.target.value})}
                           placeholder="Field Label"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          className="w-full rounded-lg border border-[#d9d1c4] bg-white px-3 py-2 focus:border-[#8b6c3f] focus:outline-none"
                         />
                         
                         <div className="grid grid-cols-2 gap-3">
                           <select
                             value={newField.fieldType}
                             onChange={(e) => setNewField({...newField, fieldType: e.target.value})}
-                            className="px-3 py-2 border border-gray-300 rounded-md"
+                            className="rounded-lg border border-[#d9d1c4] bg-white px-3 py-2 focus:border-[#8b6c3f] focus:outline-none"
                           >
                             {fieldTypes.map(type => (
                               <option key={type.value} value={type.value}>{type.label}</option>
@@ -325,7 +330,7 @@ const EditRoundPage = () => {
                             value={newField.placeholder}
                             onChange={(e) => setNewField({...newField, placeholder: e.target.value})}
                             placeholder="Placeholder text"
-                            className="px-3 py-2 border border-gray-300 rounded-md"
+                            className="rounded-lg border border-[#d9d1c4] bg-white px-3 py-2 focus:border-[#8b6c3f] focus:outline-none"
                           />
                         </div>
                         
@@ -342,13 +347,13 @@ const EditRoundPage = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={addField}
-                            className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-400 cursor-pointer"
+                            className="rounded-lg bg-black px-4 py-2 text-white transition-colors hover:bg-neutral-800 cursor-pointer"
                           >
                             Add Field
                           </button>
                           <button
                             onClick={() => setIsAddingField(false)}
-                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 cursor-pointer"
+                            className="rounded-lg border border-[#d9d1c4] bg-white px-4 py-2 text-[#4c4438] transition-colors hover:bg-[#f4eee2] cursor-pointer"
                           >
                             Cancel
                           </button>
@@ -358,7 +363,7 @@ const EditRoundPage = () => {
                   ) : (
                     <button
                       onClick={() => setIsAddingField(true)}
-                      className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-600 hover:border-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                      className="w-full rounded-xl border-2 border-dashed border-[#d9d1c4] p-4 text-[#6e5b3f] transition-colors hover:border-[#c9b28d] hover:bg-[#fbf7ef] cursor-pointer"
                     >
                       + Add New Field
                     </button>
@@ -368,8 +373,8 @@ const EditRoundPage = () => {
                 // VIEW MODE
                 <div className="space-y-3">
                   {formFields.map((field, index) => (
-                    <div key={index} className="p-3 bg-gray-50 rounded border border-gray-200">
-                      <div className="font-medium text-gray-900">
+                    <div key={index} className="rounded-lg border border-[#e7dfd3] bg-[#fffdfa] p-3">
+                      <div className="font-medium text-[#1d1b18]">
                         {field.label}
                         {field.required && <span className="text-red-500 ml-1">*</span>}
                       </div>
@@ -387,7 +392,7 @@ const EditRoundPage = () => {
           {/* Email Templates */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Selected Email */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="rounded-[1.25rem] border border-[#e8e0d4] bg-white p-6 shadow-[0_22px_55px_-45px_rgba(0,0,0,0.5)]">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-green-700">
                 <Mail size={20} />
                 Selected Candidates Email
@@ -395,7 +400,7 @@ const EditRoundPage = () => {
               <textarea
                 value={selectedEmail}
                 onChange={(e) => setSelectedEmail(e.target.value)}
-                className="w-full h-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm"
+                className="h-64 w-full rounded-lg border border-[#d9d1c4] bg-[#fffdfa] px-3 py-2 font-mono text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
                 placeholder="Write email template for selected candidates..."
               />
               <div className="mt-3 text-xs text-gray-500">
@@ -414,7 +419,7 @@ const EditRoundPage = () => {
             </div>
 
             {/* Rejection Email */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="rounded-[1.25rem] border border-[#e8e0d4] bg-white p-6 shadow-[0_22px_55px_-45px_rgba(0,0,0,0.5)]">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-red-700">
                 <Mail size={20} />
                 Non-Selected Candidates Email
@@ -422,7 +427,7 @@ const EditRoundPage = () => {
               <textarea
                 value={rejectionEmail}
                 onChange={(e) => setRejectionEmail(e.target.value)}
-                className="w-full h-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm"
+                className="h-64 w-full rounded-lg border border-[#d9d1c4] bg-[#fffdfa] px-3 py-2 font-mono text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-200"
                 placeholder="Write email template for non-selected candidates..."
               />
               <div className="mt-3 text-xs text-gray-500">
@@ -442,17 +447,17 @@ const EditRoundPage = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="rounded-[1.5rem] border border-[#e8e0d4] bg-white p-6 shadow-[0_22px_55px_-45px_rgba(0,0,0,0.5)]">
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => window.close()}
-                className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                className="rounded-xl border border-[#d9d1c4] bg-white px-6 py-2.5 font-medium text-[#4c4438] transition-colors hover:bg-[#f4eee2]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                className="flex items-center gap-2 px-6 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                className="flex items-center gap-2 rounded-xl bg-black px-6 py-2.5 font-medium text-white transition-colors hover:bg-neutral-800"
               >
                 <Save size={20} />
                 Save Changes

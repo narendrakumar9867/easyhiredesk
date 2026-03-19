@@ -22,14 +22,14 @@ export default function CandidateJobDetailsPage() {
     
     useEffect(() => {
         const fetchApplicationData = async () => {
-            if (!token || !applicationId) {
+            if (!applicationId) {
                 setLoading(false);
                 return;
             }
 
             try {
                 const config = {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
                 };
 
                 // Fetch application data - this should return application with populated job data

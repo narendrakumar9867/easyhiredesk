@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useAuth } from "@/src/hooks/useAuth";
 
@@ -13,16 +13,26 @@ interface LoginPageProps {
   isOpen: boolean;
   onClose: () => void;
   onSignupClick?: () => void; // Add this prop for navigation to signup
+  forcedRole?: "candidate" | "hire_manager";
 }
 
-export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageProps) {
+export default function LoginPage({ isOpen, onClose, onSignupClick, forcedRole }: LoginPageProps) {
   if(!isOpen) return null;
 
+  const resolvedRole = forcedRole || "candidate";
+
   const [formData, setFormData] = useState<FormData>({
-    role: "candidate",
+    role: resolvedRole,
     email: "",
     password: "",
   });
+
+  useEffect(() => {
+    if (forcedRole) {
+      setFormData((prev) => ({ ...prev, role: forcedRole }));
+    }
+  }, [forcedRole]);
+
   const { login, loginWithGoogle, getCachedLoginAuthProvider, isLoggingIn, isGoogleSigningIn } = useAuth();
   
   const validateEmail = (email: string): boolean => {
@@ -98,7 +108,7 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
     }
 
     try {
-      await login(formData);
+      await login({ ...formData, role: resolvedRole });
       toast.success("Logged in successfully!");
       onClose();
     } catch (error: any) {
@@ -138,12 +148,12 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
     }
 
     try {
-      await loginWithGoogle(formData.role);
+      await loginWithGoogle(resolvedRole);
       onClose();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Google login failed.");
     }
-  }, [formData.email, formData.role, getCachedLoginAuthProvider, loginWithGoogle, onClose]);
+  }, [formData.email, getCachedLoginAuthProvider, loginWithGoogle, onClose, resolvedRole]);
 
   return (
     <>

@@ -72,20 +72,17 @@ export const useAuth = create<AuthStore>()(
             // Initialize auth state from localStorage
             initializeAuth: () => {
                 if (typeof window !== 'undefined') {
-                    const token = localStorage.getItem("token");
                     const storedUser = localStorage.getItem("authUser");
                     
-                    if (token && storedUser) {
+                    if (storedUser) {
                         try {
                             const user = JSON.parse(storedUser);
                             set({ 
-                                token, 
                                 authUser: user, 
                                 isCheckingAuth: false 
                             });
                         } catch (error) {
                             console.error("Error parsing stored user:", error);
-                            localStorage.removeItem("token");
                             localStorage.removeItem("authUser");
                         }
                     }
@@ -95,42 +92,23 @@ export const useAuth = create<AuthStore>()(
             checkAuth: async () => {
                 set({ isCheckingAuth: true });
                 try {
-                    // Check existing backend JWT only.
-                    const token = get().token || localStorage.getItem("token");
-                    if (token) {
-                        try {
-                            const res = await axiosInstance.get<AuthResponse>("/auth/check", {
-                                headers: {
-                                    Authorization: `Bearer ${token}`,
-                                },
-                            });
+                    const token = get().token;
+                    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
-                            localStorage.setItem("authUser", JSON.stringify(res.data));
-                            set({ 
-                                authUser: res.data, 
-                                token, 
-                                isCheckingAuth: false 
-                            });
-                            return;
-                        } catch (backendError: any) {
-                            if (backendError.response?.status !== 404) {
-                                console.log("Backend auth failed.");
-                            }
-                            // Clear invalid/stale backend auth artifacts.
-                            localStorage.removeItem("token");
-                            localStorage.removeItem("authUser");
-                            set({ authUser: null, token: null });
-                        }
-                    }
+                    const res = await axiosInstance.put<AuthResponse>(
+                        "/auth/check",
+                        {},
+                        { headers }
+                    );
 
+                    localStorage.setItem("authUser", JSON.stringify(res.data));
                     set({ 
-                        authUser: null, 
-                        token: null, 
+                        authUser: res.data, 
+                        token: token || null,
                         isCheckingAuth: false 
                     });
                 } catch (error: any) {
                     console.error("Error checking auth:", error);
-                    localStorage.removeItem("token");
                     localStorage.removeItem("authUser");
                     set({ 
                         authUser: null, 
@@ -147,12 +125,10 @@ export const useAuth = create<AuthStore>()(
                     const token = res.data.token;
 
                     if (token) {
-                        localStorage.setItem("token", token);
-                        localStorage.setItem("authUser", JSON.stringify(res.data));
-                        // Set JWT in cookies for middleware
-                        document.cookie = `jwt=${token}; path=/; max-age=86400`;
                         set({ token });
                     }
+
+                    localStorage.setItem("authUser", JSON.stringify(res.data));
 
                     void upsertAuthProviderByEmail({
                         email: res.data.email,
@@ -189,11 +165,10 @@ export const useAuth = create<AuthStore>()(
 
                     const authToken = res.data.token;
                     if (authToken) {
-                        localStorage.setItem("token", authToken);
-                        localStorage.setItem("authUser", JSON.stringify(res.data));
-                        document.cookie = `jwt=${authToken}; path=/; max-age=86400`;
                         set({ token: authToken });
                     }
+
+                    localStorage.setItem("authUser", JSON.stringify(res.data));
 
                     void upsertAuthProviderByEmail({
                         email: res.data.email,
@@ -233,11 +208,10 @@ export const useAuth = create<AuthStore>()(
 
                     const authToken = res.data.token;
                     if (authToken) {
-                        localStorage.setItem("token", authToken);
-                        localStorage.setItem("authUser", JSON.stringify(res.data));
-                        document.cookie = `jwt=${authToken}; path=/; max-age=86400`;
                         set({ token: authToken });
                     }
+
+                    localStorage.setItem("authUser", JSON.stringify(res.data));
 
                     void upsertAuthProviderByEmail({
                         email: res.data.email,
@@ -277,12 +251,10 @@ export const useAuth = create<AuthStore>()(
                     const token = res.data.token;
 
                     if (token) {
-                        localStorage.setItem("token", token);
-                        localStorage.setItem("authUser", JSON.stringify(res.data));
-                        // Set JWT in cookies for middleware
-                        document.cookie = `jwt=${token}; path=/; max-age=86400`;
                         set({ token });
                     }
+
+                    localStorage.setItem("authUser", JSON.stringify(res.data));
                     
                     set({ authUser: res.data });
                 } catch (error: any) {
@@ -295,22 +267,14 @@ export const useAuth = create<AuthStore>()(
             logout: async () => {
                 try {
                     const token = get().token;
-                    if (token) {
-                        await axiosInstance.post("/auth/logout", {}, {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            },
-                        });
-                    }
+                    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+                    await axiosInstance.post("/auth/logout", {}, { headers });
                 } catch (error: any) {
                     console.error("Logout API call failed:", error);
                     // Continue with local logout even if API fails
                 } finally {
                     // Always clear local data
-                    localStorage.removeItem("token");
                     localStorage.removeItem("authUser");
-                    // Clear JWT cookie
-                    document.cookie = "jwt=; path=/; max-age=0";
                     set({ authUser: null, token: null });
                     toast.success("Logged out successfully.");
                 }
@@ -319,11 +283,10 @@ export const useAuth = create<AuthStore>()(
             updateProfile: async (data: UpdateProfileData) => {
                 set({ isUpdatingProfile: true });
                 try {
-                    const token = get().token || localStorage.getItem("token");
+                    const token = get().token;
+                    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
                     const res = await axiosInstance.put<AuthResponse>("/auth/update-profile", data, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
+                        headers,
                     });
 
                     const updatedAuthUser = {
@@ -345,14 +308,12 @@ export const useAuth = create<AuthStore>()(
             },
             
             setToken: (token: string) => {
-                localStorage.setItem("token", token);
                 set({ token });
             }
         }),
         {
             name: "auth-storage", // unique name for localStorage key
             partialize: (state) => ({ 
-                token: state.token, 
                 authUser: state.authUser 
             }),
         }

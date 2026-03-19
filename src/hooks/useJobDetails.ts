@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Job, JobRounds } from '@/src/types/Job';
 import { FormResponse } from '@/src/types/form';
+import { axiosInstance } from '@/src/utils/axios';
 
 interface UseJobDetailsReturn {
   job: Job | null;
@@ -24,15 +24,16 @@ export const useJobDetails = (jobId: string, token: string | null): UseJobDetail
   const [error, setError] = useState<string | null>(null);
 
   const fetchJobDetails = async () => {
-    if (!jobId || !token) return;
+    if (!jobId) return;
 
     try {
       setLoading(true);
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
       
       // Fetch job details
       console.log("Fetching job details for jobId:", jobId);
-      const jobResponse = await axios.get(`http://localhost:5000/api/jobs/${jobId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const jobResponse = await axiosInstance.get(`/jobs/${jobId}`, {
+        headers,
       });
       console.log("Job response:", jobResponse.data);
       setJob(jobResponse.data.job);
@@ -40,8 +41,8 @@ export const useJobDetails = (jobId: string, token: string | null): UseJobDetail
       // Fetch rounds for this job
       try {
         console.log("Fetching rounds for jobId:", jobId);
-        const roundsResponse = await axios.get(`http://localhost:5000/api/rounds/${jobId}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        const roundsResponse = await axiosInstance.get(`/rounds/${jobId}`, {
+          headers,
         });
         console.log("Rounds API response:", roundsResponse.data);
         
@@ -69,8 +70,8 @@ export const useJobDetails = (jobId: string, token: string | null): UseJobDetail
       // Fetch candidate responses
       try {
         console.log("Fetching candidate responses for jobId:", jobId);
-        const responsesResponse = await axios.get(`http://localhost:5000/api/form/responses/${jobId}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        const responsesResponse = await axiosInstance.get(`/form/responses/${jobId}`, {
+          headers,
         });
         console.log("Candidate responses API response:", responsesResponse.data);
         
