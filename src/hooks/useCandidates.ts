@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from 'react';
-import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { FormResponse } from '@/src/types/form';
 import { Job } from '@/src/types/Job';
+import { axiosInstance } from '@/src/utils/axios';
 
 interface UseCandidatesProps {
   token: string | null;
@@ -33,6 +33,7 @@ export const useCandidates = ({
 }: UseCandidatesProps): UseCandidatesReturn => {
   const [updating, setUpdating] = useState<string | null>(null);
   const [openCandidateId, setOpenCandidateId] = useState<string | null>(null);
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
 
   // Get round status helper
   const getRoundStatus = (candidate: FormResponse, round: number): string => {
@@ -91,10 +92,10 @@ export const useCandidates = ({
       console.log(`Updating candidate ${responseId} status to ${status} for round ${round}`);
       console.log('Hire manager email being sent:', hireManagerEmail);
 
-      const response = await axios.put(
-        `http://localhost:5000/api/form/update-status/${responseId}`,
+      const response = await axiosInstance.put(
+        `/form/update-status/${responseId}`,
         { status, notes: notes || '', round, hireManagerEmail },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: authHeaders }
       );
 
       console.log("Status update response:", response.data);
@@ -156,8 +157,8 @@ export const useCandidates = ({
   // View uploaded file
   const viewUploadedFile = async (responseId: string, fieldLabel: string) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/form/file/${responseId}/${fieldLabel}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axiosInstance.get(`/form/file/${responseId}/${fieldLabel}`, {
+        headers: authHeaders,
       });
 
       if (response.data.success) {

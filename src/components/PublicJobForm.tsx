@@ -3,7 +3,6 @@ import RenderField from "./FormFields/RenderField"
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowBigUp, CheckCircle, Loader2, X } from "lucide-react";
-import axios from 'axios';
 import LoginPage from "../app/auth/login/page";
 import SignUpPage from "../app/auth/signup/page";
 import { useAuth } from "@/src/hooks/useAuth";
@@ -11,11 +10,12 @@ import { FormConfig, FormField } from "../types/form";
 import renderMakrdown from "./MarkdownRenderer";
 import ReCAPTCHA from "react-google-recaptcha";
 import toast from "react-hot-toast";
+import { axiosInstance } from "@/src/utils/axios";
 
 const PublicJobApplicationForm = () => {
   const params = useParams();
   const router = useRouter();
-  const { authUser, token, checkAuth } = useAuth();
+  const { authUser, checkAuth } = useAuth();
   const jobId = params?.id as string;
   const [formConfig, setFormConfig] = useState<FormConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -30,6 +30,7 @@ const PublicJobApplicationForm = () => {
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [applicationSubmitted, setApplicationSubmitted] = useState(false);
   const [captchaValue, setCaptchaValue] = useState<string | null>(null);
+  const isCandidateUser = authUser?.role === 'candidate';
 
   // Check if user is authenticated
   useEffect(() => {
@@ -44,7 +45,7 @@ const PublicJobApplicationForm = () => {
 
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:5000/api/form/config/${jobId}`);
+        const response = await axiosInstance.get(`/form/config/${jobId}`);
         console.log("Form config response:", response.data);
         
         if (response.data.success) {
@@ -89,15 +90,10 @@ const PublicJobApplicationForm = () => {
   // Check if user already submitted
   useEffect(() => {
     const checkExistingSubmission = async () => {
-      if (!token || !jobId || !authUser) return;
+      if (!jobId || !authUser || !isCandidateUser) return;
 
       try {
-        const response = await axios.get(
-          `http://localhost:5000/api/form/my-submission/${jobId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
+        const response = await axiosInstance.get(`/form/my-submission/${jobId}`);
         
         if (response.data.success) {
           setAlreadySubmitted(true);
@@ -112,10 +108,12 @@ const PublicJobApplicationForm = () => {
       }
     };
 
-    if (authUser && token) {
+    if (authUser && isCandidateUser) {
       checkExistingSubmission();
+    } else {
+      setAlreadySubmitted(false);
     }
-  }, [authUser, token, jobId]);
+  }, [authUser, isCandidateUser, jobId]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -146,6 +144,11 @@ const PublicJobApplicationForm = () => {
     
     if (!authUser) {
       setShowLogin(true);
+      return;
+    }
+
+    if (!isCandidateUser) {
+      toast.error("Only candidate accounts can submit this application form.");
       return;
     }
 
@@ -214,15 +217,7 @@ const PublicJobApplicationForm = () => {
 
       // Add responses as JSON string
       formDataToSend.append('responses', JSON.stringify(responses));
-      const response = await axios.post(
-        'http://localhost:5000/api/form/submit',
-        formDataToSend,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          }
-        }
-      );
+      const response = await axiosInstance.post('/form/submit', formDataToSend);
 
       console.log("Submission response:", response.data);
 
@@ -480,6 +475,31 @@ const PublicJobApplicationForm = () => {
                     </button>
                   </div>
                 </div>
+              ) : !isCandidateUser ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-amber-900 mb-2 text-center font-semibold">
+                    You are logged in as a Hire Manager account
+                  </p>
+                  <p className="text-amber-800 mb-4 text-center text-sm">
+                    This public application form is only for candidate accounts. Please log in with a candidate account to submit.
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowLogin(true)}
+                      className="bg-black text-white px-6 py-2 rounded-md hover:bg-white hover:text-black border transition-colors cursor-pointer"
+                    >
+                      Log In as Candidate
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePreviousStep}
+                      className="bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors font-medium cursor-pointer"
+                    >
+                      ← Back
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <div className="pt-10">
                   <div className="flex justify-center mb-8">
@@ -541,6 +561,7 @@ const PublicJobApplicationForm = () => {
         isOpen={showLogin} 
         onClose={() => setShowLogin(false)}
         onSignupClick={handleLoginToSignup}
+        forcedRole="candidate"
       />
 
       {/* Signup Modal */}
@@ -548,6 +569,7 @@ const PublicJobApplicationForm = () => {
         isOpen={showSignup}
         onClose={() => setShowSignup(false)}
         onLoginClick={handleSignupToLogin}
+        forcedRole="candidate"
       />
     </div>
   );

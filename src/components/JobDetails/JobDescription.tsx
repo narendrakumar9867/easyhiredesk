@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from 'react';
-import axios from 'axios';
 import { Edit2, FileTextIcon, Save, X } from 'lucide-react';
 import renderMarkdown from '@/src/components/MarkdownRenderer';
+import { axiosInstance } from '@/src/utils/axios';
 
 interface JobDescriptionProps {
   aboutJob: string;
@@ -24,12 +24,7 @@ const JobDescription: React.FC<JobDescriptionProps> = ({ aboutJob, jobId }) => {
 
     setIsSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(
-        `http://localhost:5000/api/jobs/${jobId}/description`,
-        { aboutJob: editedDescription },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axiosInstance.put(`/jobs/${jobId}/description`, { aboutJob: editedDescription });
       setIsEditing(false);
       window.location.reload(); 
     } catch (error: any) {

@@ -35,15 +35,14 @@ export default function JobListsPage() {
     useEffect(() => {
         initializeAuth();
 
-        const storedToken = localStorage.getItem("token");
-        if (storedToken && !authUser) {
+        if (!authUser) {
             checkAuth();
         }
     }, [authUser, checkAuth, initializeAuth]);
 
     useEffect(() => {
         const fetchRoleData = async () => {
-            if (!token || !role) {
+            if (!role) {
                 setLoading(false);
                 return;
             }
@@ -52,9 +51,7 @@ export default function JobListsPage() {
 
             try {
                 const config = {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
                 };
 
                 if (role === "hire_manager") {
@@ -90,14 +87,15 @@ export default function JobListsPage() {
 
     useEffect(() => {
         const fetchApplicationCounts = async () => {
-            if (!token || role !== "hire_manager" || jobs.length === 0) return;
+            if (role !== "hire_manager" || jobs.length === 0) return;
 
             try {
                 const counts: Record<string, number> = {};
+                const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
                 for (const job of jobs) {
                     const response = await axiosInstance.get(`/form/responses/${job._id}`, {
-                        headers: { Authorization: `Bearer ${token}` },
+                        headers,
                     });
 
                     counts[job._id] = response.data?.data?.responses?.length || 0;
@@ -203,7 +201,7 @@ export default function JobListsPage() {
         );
     }
 
-    if (!authUser || !token) {
+    if (!authUser) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-white px-4">
                 <div className="max-w-md rounded-[2rem] border border-neutral-200 bg-neutral-50 p-8 text-center shadow-sm">

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useAuth } from "@/src/hooks/useAuth";
 
@@ -13,17 +13,27 @@ interface LoginPageProps {
   isOpen: boolean;
   onClose: () => void;
   onSignupClick?: () => void; // Add this prop for navigation to signup
+  forcedRole?: "candidate" | "hire_manager";
 }
 
-export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageProps) {
+export default function LoginPage({ isOpen, onClose, onSignupClick, forcedRole }: LoginPageProps) {
   if(!isOpen) return null;
 
+  const resolvedRole = forcedRole || "candidate";
+
   const [formData, setFormData] = useState<FormData>({
-    role: "candidate",
+    role: resolvedRole,
     email: "",
     password: "",
   });
-  const { login, isLoggingIn } = useAuth();
+
+  useEffect(() => {
+    if (forcedRole) {
+      setFormData((prev) => ({ ...prev, role: forcedRole }));
+    }
+  }, [forcedRole]);
+
+  const { login, loginWithGoogle, getCachedLoginAuthProvider, isLoggingIn, isGoogleSigningIn } = useAuth();
   
   const validateEmail = (email: string): boolean => {
     if(!email) {
@@ -91,8 +101,14 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
 
     if(!validateForm()) return;
 
+    const provider = getCachedLoginAuthProvider(formData.email);
+    if (provider === "google") {
+      toast.error("Yeh account Google se registered hai. Sign in with Google use karo.");
+      return;
+    }
+
     try {
-      await login(formData);
+      await login({ ...formData, role: resolvedRole });
       toast.success("Logged in successfully!");
       onClose();
     } catch (error: any) {
@@ -112,7 +128,32 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
         toast.error("Login failed. Please try again.");
       }
     }
-  }, [formData, validateForm, login, onClose]);
+  }, [formData, validateForm, getCachedLoginAuthProvider, login, onClose]);
+
+  const handleGoogleLogin = useCallback(async () => {
+    if (!formData.email.trim()) {
+      toast.error("Email is required.");
+      return;
+    }
+
+    if (!validateEmail(formData.email)) {
+      toast.error("Invalid email format.");
+      return;
+    }
+
+    const provider = getCachedLoginAuthProvider(formData.email);
+    if (provider === "email") {
+      toast.error("Yeh account email/password se registered hai. Password se login karo.");
+      return;
+    }
+
+    try {
+      await loginWithGoogle(resolvedRole);
+      onClose();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Google login failed.");
+    }
+  }, [formData.email, getCachedLoginAuthProvider, loginWithGoogle, onClose, resolvedRole]);
 
   return (
     <>
@@ -134,7 +175,7 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <select 
+          {/* <select 
             id="role"
             name="role"
             value={formData.role}
@@ -145,7 +186,7 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
           >
             <option value="candidate">Candidate</option>
             <option value="hire_manager">Hire Manager</option>
-          </select>
+          </select> */}
 
           <input
             type="email"
@@ -153,27 +194,38 @@ export default function LoginPage({ isOpen, onClose, onSignupClick }: LoginPageP
             placeholder="Email address"
             value={formData.email}
             onChange={handleInputChange}
-            disabled={isLoggingIn}
+            disabled={isLoggingIn || isGoogleSigningIn}
             className="w-full px-4 py-2 border rounded-lg focus:outline-none"
           />
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleInputChange}
-            disabled={isLoggingIn}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none"
-          />
-          
-          <button
-            type="submit"
-            disabled={isLoggingIn}
-            className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50"
-          >
-            {isLoggingIn ? "Logging In..." : "Log In"}
-          </button>
+            <>
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleInputChange}
+                disabled={isLoggingIn || isGoogleSigningIn}
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none"
+              />
+
+              <button
+                type="submit"
+                disabled={isLoggingIn || isGoogleSigningIn}
+                className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50"
+              >
+                {isLoggingIn ? "Logging In..." : "Log In"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={isGoogleSigningIn || isLoggingIn}
+                className="w-full bg-gray-300 text-black py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+              >
+                {isGoogleSigningIn ? "Signing in with Google..." : "Sign in with Google"}
+              </button>
+            </>
         </form>
 
         <div className="mt-4 text-center">

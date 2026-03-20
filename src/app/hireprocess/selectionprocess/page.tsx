@@ -2,11 +2,11 @@
 import React from 'react';
 import { useState } from 'react';
 import { Users, Clock, Star } from 'lucide-react';
-import axios from 'axios';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import Navbar from '@/src/components/Navbar';
 import FooterLogin from '@/src/components/FooterLogin';
+import { axiosInstance } from '@/src/utils/axios';
 
 export default function HirePage() {
   const [selectedRounds, setSelectedRounds] = useState(2);
@@ -27,8 +27,8 @@ export default function HirePage() {
     const roundsArray = Array.from({ length: selectedRounds }, (_, i) => `Round ${i + 1}`);
     console.log("roundsArray:", roundsArray);
 
-    const res = await axios.post(
-      "http://localhost:5000/api/rounds",
+    const res = await axiosInstance.post(
+      "/rounds",
       { 
         jobId: jobId, 
         selectedRounds: roundsArray, 

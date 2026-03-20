@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Eye, Save, Edit3 } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import axios from 'axios';
 
 import Navbar from "@/src/components/Navbar";
 import FooterLogin from '@/src/components/FooterLogin';
@@ -16,6 +15,7 @@ import { useRoundData } from '@/src/hooks/useRoundData';
 
 import { parseEmail } from '@/src/utils/emailParser';
 import { fieldTypes } from '@/src/utils/fieldTypes';
+import { axiosInstance } from '@/src/utils/axios';
 
 import { FormField } from '@/src/types/rounds';
 
@@ -177,7 +177,7 @@ const RoundPage = () => {
           nonSelectedEmail: parseEmail(roundData.rejectionEmail)
         };
 
-        await axios.post("http://localhost:5000/api/round/details", payload, {
+        await axiosInstance.post("/round/details", payload, {
           headers: { "Content-Type": "application/json" }
         });
       }

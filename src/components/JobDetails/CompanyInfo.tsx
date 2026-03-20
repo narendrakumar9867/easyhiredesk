@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from 'react';
-import axios from 'axios';
 import { Building2 } from 'lucide-react';
 import { Job } from '@/src/types/Job';
+import { axiosInstance } from '@/src/utils/axios';
 
 interface CompanyInfoProps {
   job: Job;
@@ -21,10 +21,7 @@ const CompanyInfo: React.FC<CompanyInfoProps> = ({ job }) => {
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5000/api/jobs/${job._id}/company-info`, editedData, {
-        headers: { Authorization: `Bearer ${token}`}
-      });
+      await axiosInstance.put(`/jobs/${job._id}/company-info`, editedData);
       setIsEditing(false);
       window.location.reload();
     } catch (error) {
