@@ -1,76 +1,78 @@
-"use client";
-import React from 'react';
+'use client';
+
+import { useEffect } from 'react';
 import Navbar from '@/src/components/Navbar';
 import Footer from '@/src/components/Footer';
 import { useAuth } from '@/src/hooks/useAuth';
-import Balancer from 'react-wrap-balancer';
+import { MeetingDashboard, UnauthorizedMessage } from './components';
 
-const meetingPage = () => {
-  const { authUser } = useAuth();
-  const role = authUser?.role;
+export default function MeetingPage() {
+  const { authUser, initializeAuth, checkAuth, isCheckingAuth } = useAuth();
+  const isHireManager = authUser?.role === 'hire_manager';
+  const isCandidate = authUser?.role === 'candidate';
+
+  useEffect(() => {
+    initializeAuth();
+    if (!authUser) {
+      checkAuth();
+    }
+  }, [authUser, checkAuth, initializeAuth]);
 
   return (
-    <div className='flex flex-col min-h-screen bg-white'>
-      <div className='fixed top-0 left-0 w-full z-50 shadow-md bg-white'>
+    <div className="flex min-h-screen flex-col bg-white text-neutral-900">
+      {/* Navbar */}
+      <div className="fixed top-0 left-0 z-50 w-full bg-white shadow-md">
         <Navbar />
       </div>
-      <div className='w-full h-60 relative overflow-hidden'>
-        <img
-          src="/images/meeting-header-bg.jpg"
-          alt='meeting header bg'
-          className='w-full object-cover'
-        />
-        <div className='absolute inset-0 bg-black/40'></div>
-      </div>
 
-      <div className='pt-20'>
-        {!role && (
-          <Hero
-            button={null}
-            text="Get your team in sync, no matter your location. Streamline processes, create team rituals, and watch productivity soar."
-          />
-        )}
-      </div>
+      {/* Main Content */}
+      <main className="flex-1 pt-14">
+        <section className="px-4 py-12 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            {/* Page Header */}
+            <div className="mb-12 space-y-4">
+              <span className="inline-flex items-center rounded-full border border-neutral-200 px-4 py-1 text-sm font-medium text-neutral-600">
+                Meeting Scheduling
+              </span>
+              <h1 className="max-w-3xl text-4xl font-serif tracking-tight sm:text-5xl lg:text-6xl">
+                Schedule and manage interview meetings
+              </h1>
+              <p className="max-w-2xl text-base leading-7 text-neutral-600 sm:text-lg">
+                Create Google Meet links, schedule meetings with candidates, and manage your interview rounds all in one place.
+              </p>
+            </div>
 
-      <div className='flex-1 max-w-6xl mx-auto py-10 px-6 pt-28'>
+            {/* Conditional Rendering Based on Auth State */}
+            {isCheckingAuth ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-neutral-200 border-t-black"></div>
+                  <p className="mt-4 text-sm text-neutral-600">Loading...</p>
+                </div>
+              </div>
+            ) : !authUser ? (
+              /* Not Logged In */
+              <UnauthorizedMessage type="not-logged-in" />
+            ) : isCandidate ? (
+              /* Candidate User */
+              <UnauthorizedMessage type="candidate-prompt" />
+            ) : !isHireManager ? (
+              /* Wrong Role */
+              <UnauthorizedMessage type="wrong-role" />
+            ) : (
+              /* Hire Manager - Show Dashboard */
+              <MeetingDashboard />
+            )}
+          </div>
+        </section>
+      </main>
 
-      </div>
-
-      <Footer />
+      {/* Footer */}
+      {!isHireManager && (
+        <div className="mt-auto border-t border-neutral-200">
+          <Footer />
+        </div>
+      )}
     </div>
   );
-};
-
-function Hero({
-  button,
-  text,
-}: {
-  button: React.ReactNode | null;
-  text: string;
-}) {
-  return (
-    <section className='mx-auto flex max-w-6xl flex-col-reverse gap-24 px-4 pb-12 transition-all md:flex-row md:gap-4'>
-      <div className='flex flex-col items-center gap-6 pt-8 text-center md:w-1/2 md:items-start md:gap-10 md:pt-32 md:text-left'>
-      
-        <h1 className='text-4xl font-semibold md:text-6xl'>
-          <Balancer>Hire the best talent in tech</Balancer>
-        </h1>
-
-        <p className='text-neutral-400 md:max-w-[400px]'>
-          <Balancer>{text}</Balancer>
-        </p>
-
-        <div className="flex flex-col text-center items-center gap-2 md:gap-3">
-          <h4 className="text-gray-700 text-sm md:text-base font-medium">
-            <span className="font-semibold text-gray-900">Sponsors:</span> Sunrise Innovations, SilverOak Solutions, Northgate Ventures, etc.
-          </h4>
-          <p className="text-xs md:text-sm text-gray-500 max-w-2xl">
-            Sponsor names shown in this project are fictional and used for demonstration purposes only. They do not represent real organizations or endorsements.
-          </p>
-        </div>
-      </div>
-    </section>
-  )
 }
-
-export default meetingPage;
